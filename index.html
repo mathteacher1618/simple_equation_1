@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>簡易方程(一) - 香港小學數學</title>
+  <!-- 引入 html2canvas 程式庫以支援報告圖片下載 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    /* 全局樣式與 iPad 觸控優化 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #f0f4f8;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      touch-action: manipulation;
+    }
+
+    /* 頂部導覽列 */
+    header {
+      background-color: #2b5278;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .lang-btn {
+      background-color: transparent;
+      border: 1px solid white;
+      color: white;
+      padding: 8px 18px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+      min-height: 44px;
+    }
+
+    .lang-btn:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .page-title {
+      text-align: center;
+      font-size: 1.8rem;
+      color: #2b5278;
+      margin-bottom: 30px;
+      font-weight: bold;
+    }
+
+    /* 首頁選單網格 */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 35px 25px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 2px solid transparent;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .card:hover, .card:active {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      border-color: #4a90e2;
+    }
+
+    .card h3 {
+      font-size: 1.4rem;
+      color: #1a365d;
+      margin-bottom: 12px;
+    }
+
+    .card p {
+      color: #666;
+      font-size: 0.98rem;
+      line-height: 1.5;
+    }
+
+    /* 練習界面 */
+    .quiz-wrapper {
+      max-width: 780px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .back-nav-btn {
+      background: white;
+      border: 1px solid #cbd5e0;
+      color: #4a5568;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+      transition: all 0.2s;
+      min-height: 44px;
+    }
+
+    .back-nav-btn:hover {
+      background-color: #edf2f7;
+      color: #2b6cb0;
+    }
+
+    .quiz-card {
+      background: white;
+      border-radius: 16px;
+      padding: 35px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      width: 100%;
+    }
+
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      border-bottom: 2px solid #edf2f7;
+      padding-bottom: 12px;
+    }
+
+    .quiz-progress {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #3182ce;
+    }
+
+    .unit-tag {
+      background-color: #ebf8ff;
+      color: #2b6cb0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.95rem;
+      font-weight: bold;
+    }
+
+    .level-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+    .level-easy { background-color: #c6f6d5; color: #22543d; }
+    .level-medium { background-color: #feebc8; color: #744210; }
+    .level-hard { background-color: #fed7d7; color: #9b2c2c; }
+
+    .question-display {
+      margin: 25px 0;
+      text-align: center;
+    }
+
+    .question-prompt {
+      font-size: 1.35rem;
+      color: #2d3748;
+      font-weight: bold;
+      margin-bottom: 15px;
+      line-height: 1.5;
+    }
+
+    .math-expression-display {
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #1a365d;
+      margin: 15px 0 25px 0;
+      letter-spacing: 1px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* 數學分數樣式 */
+    .math-frac {
+      display: inline-flex;
+      flex-direction: column;
+      vertical-align: middle;
+      text-align: center;
+      margin: 0 6px;
+      line-height: 1.1;
+      font-size: 0.9em;
+    }
+
+    .math-frac .numerator {
+      border-bottom: 2.5px solid currentColor;
+      padding: 0 6px 3px 6px;
+      display: block;
+    }
+
+    .math-frac .denominator {
+      padding: 3px 6px 0 6px;
+      display: block;
+    }
+
+    .equation {
+      font-size: 1.8rem;
+      font-weight: bold;
+      text-align: center;
+      margin: 25px 0 20px 0;
+      color: #2d3748;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .answer-input {
+      font-size: 1.8rem;
+      width: 160px;
+      text-align: center;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      outline: none;
+      transition: border-color 0.2s;
+      min-height: 50px;
+    }
+
+    .answer-input:focus {
+      border-color: #3182ce;
+    }
+
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 14px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      text-align: center;
+      min-height: 48px;
+    }
+
+    .btn:active {
+      transform: scale(0.99);
+    }
+
+    .btn-primary { background-color: #3182ce; color: white; }
+    .btn-primary:hover { background-color: #2b6cb0; }
+
+    .btn-success { background-color: #38a169; color: white; }
+    .btn-success:hover { background-color: #2f855a; }
+
+    .btn-purple { background-color: #8e44ad; color: white; margin-bottom: 10px; }
+    .btn-purple:hover { background-color: #7d3c98; }
+
+    .btn-sky { background-color: #38bdf8; color: white; margin-bottom: 10px; }
+    .btn-sky:hover { background-color: #0284c7; }
+
+    .btn-gray { background-color: #7f8c8d; color: white; }
+    .btn-gray:hover { background-color: #636e72; }
+
+    /* 反饋與提示訊息 */
+    .feedback-box {
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: 12px;
+      text-align: left;
+      font-size: 1rem;
+    }
+
+    .feedback-success {
+      background-color: #c6f6d5;
+      color: #22543d;
+      border: 1px solid #9ae6b4;
+      text-align: center;
+    }
+
+    .feedback-warning {
+      background-color: #fffaf0;
+      color: #744210;
+      border: 1px solid #fbd38d;
+    }
+
+    .feedback-danger {
+      background-color: #fff5f5;
+      color: #742a2a;
+      border: 1px solid #feb2b2;
+    }
+
+    /* 解題步驟卡片樣式 */
+    .vertical-solution-card {
+      background-color: #fff5f5;
+      border: 1px solid #fed7d7;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 10px;
+      text-align: left;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .solution-header {
+      color: #9b2c2c;
+      font-size: 1.15rem;
+      font-weight: bold;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .solution-sub {
+      color: #744210;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    /* 天秤原理解題步驟樣式 (對應 image_927427 & image_926d60) */
+    .balance-step-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: white;
+      border: 1px solid #fed7d7;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 15px 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #2d3748;
+      line-height: 2.2;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.02);
+    }
+
+    .balance-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .pink-txt {
+      color: #e83e8c;
+      font-weight: bold;
+    }
+
+    .step-line {
+      font-size: 1.1rem;
+      color: #2d3748;
+      margin: 8px 0;
+      line-height: 1.6;
+    }
+
+    .step-box {
+      background: white;
+      border-left: 4px solid #3182ce;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-top: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .solution-footer-ans {
+      color: #e53e3e;
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-top: 15px;
+      border-top: 1px dashed #feb2b2;
+      padding-top: 10px;
+    }
+
+    .solution-footer-tip {
+      color: #744210;
+      font-size: 0.92rem;
+      margin-top: 4px;
+    }
+
+    /* 分析報告界面 */
+    .report-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      max-width: 650px;
+      margin: 0 auto;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    .report-title {
+      text-align: center;
+      color: #3182ce;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .report-section {
+      background-color: #f8fafc;
+      border-radius: 8px;
+      padding: 12px 20px;
+      margin-bottom: 15px;
+    }
+
+    .report-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      color: #4a5568;
+      font-size: 0.95rem;
+    }
+
+    .report-row.dashed {
+      border-bottom: 1px dashed #cbd5e0;
+    }
+
+    .report-val { font-weight: bold; }
+    .val-green { color: #276749; }
+    .val-red { color: #9b2c2c; }
+    .val-blue { color: #0284c7; }
+
+    .section-label {
+      font-weight: bold;
+      color: #2d3748;
+      margin: 15px 0 10px 0;
+      font-size: 1rem;
+    }
+
+    .list-box {
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .list-box.correct-bg { background-color: #f7fafc; }
+    .list-box.wrong-bg { background-color: #f7fafc; }
+
+    .list-title {
+      font-weight: bold;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .item-card-correct {
+      background: #f0fff4;
+      border: 1px solid #c6f6d5;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+      color: #22543d;
+      font-weight: 500;
+    }
+
+    .item-card-wrong {
+      background: #fff5f5;
+      border: 1px solid #fed7d7;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+      color: #9b2c2c;
+      font-weight: 500;
+    }
+
+    /* Modal 彈窗 */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .modal-box h3 { margin-bottom: 12px; color: #2b5278; }
+    .modal-box p { margin-bottom: 20px; color: #4a5568; }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 768px) {
+      .quiz-card { padding: 25px 20px; }
+      .math-expression-display { font-size: 1.7rem; }
+      .equation { font-size: 1.5rem; }
+      .answer-input { font-size: 1.5rem; width: 130px; }
+      .balance-step-container { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部導覽列 -->
+  <header>
+    <h1 id="header-title">簡易方程(一)</h1>
+    <button id="lang-toggle-btn" class="lang-btn" onclick="toggleLanguage()">English</button>
+  </header>
+
+  <main>
+    <div class="container">
+
+      <!-- 1. 首頁選擇界面 -->
+      <div id="page-home">
+        <h2 id="home-subtitle" class="page-title">請選擇學習單元</h2>
+        <div class="menu-grid">
+          <div class="card" onclick="startQuiz('unit1')">
+            <h3 id="u1-title">單元一：一步方程求解</h3>
+            <p id="u1-desc">掌握加減乘除一步方程求解方法，學習天秤原理與代數式求值（包含初階加減、中階分數除法與高階綜合求值）。</p>
+          </div>
+          <div class="card" onclick="startQuiz('unit2')">
+            <h3 id="u2-title">單元二：方程應用與進階</h3>
+            <p id="u2-desc">進一步鞏固一步方程求解技巧，挑戰多樣化的代數變數與綜合代數式求值題型。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 答題界面 -->
+      <div id="page-quiz" class="hidden">
+        <div class="quiz-wrapper">
+          <button class="back-nav-btn" onclick="askReturnHome()">
+            <span id="lbl-back-btn">← 返回單元選擇</span>
+          </button>
+
+          <div class="quiz-card">
+            <div class="quiz-header">
+              <div>
+                <span id="quiz-mode-name" class="unit-tag">一步方程求解</span>
+                <span id="quiz-level-badge" class="level-badge hidden">初階</span>
+              </div>
+              <span id="quiz-progress-text" class="quiz-progress">題目 1 / 10</span>
+            </div>
+
+            <div class="question-display">
+              <div id="question-prompt-text" class="question-prompt">解下列方程或計算代數式的值：</div>
+              <div id="math-expr-display" class="math-expression-display">M + 14 = 46</div>
+            </div>
+
+            <div class="equation">
+              <span id="input-prefix-label">答案：</span>
+              <input type="text" id="answer-input" class="answer-input" placeholder="0" autocomplete="off" inputmode="numeric" onkeypress="handleKeyPress(event)">
+            </div>
+
+            <div id="action-area" style="margin-top: 25px;">
+              <button id="btn-submit" class="btn btn-primary" onclick="checkAnswer()">提交答案</button>
+              <button id="btn-next" class="btn btn-success hidden" onclick="nextQuestion()">下一題 ➔</button>
+            </div>
+
+            <div id="feedback-area" class="hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 表現分析報告 -->
+      <div id="page-report" class="hidden">
+        <div id="report-card-to-capture" class="report-card">
+          <h2 id="report-main-title" class="report-title">練習完成！表現分析報告</h2>
+
+          <div class="report-section">
+            <div class="report-row dashed">
+              <span id="lbl-start-time">開始時間：</span>
+              <span id="val-start-time" class="report-val">--</span>
+            </div>
+            <div class="report-row dashed">
+              <span id="lbl-end-time">完成時間：</span>
+              <span id="val-end-time" class="report-val">--</span>
+            </div>
+            <div class="report-row">
+              <span id="lbl-duration">總用時：</span>
+              <span id="val-duration" class="report-val val-blue">--</span>
+            </div>
+          </div>
+
+          <div class="report-section">
+            <div class="report-row dashed">
+              <span id="lbl-total-correct">總答對題數：</span>
+              <span id="val-correct-count" class="report-val val-green">0 / 10</span>
+            </div>
+            <div class="report-row">
+              <span id="lbl-accuracy">整體正確率：</span>
+              <span id="val-accuracy" class="report-val">0%</span>
+            </div>
+          </div>
+
+          <div class="section-label" id="lbl-mastery-title">單元掌握度分析</div>
+          <div class="report-section">
+            <div class="report-row">
+              <span id="report-unit-name">1. 一步方程求解</span>
+              <span id="val-unit-mastery" class="report-val">0 / 10 (0%)</span>
+            </div>
+          </div>
+
+          <div class="list-box correct-bg">
+            <div class="list-title val-green">
+              <span>☑</span> <span id="lbl-correct-title">答對的題目</span>
+            </div>
+            <div id="correct-list-container"></div>
+          </div>
+
+          <div class="list-box wrong-bg">
+            <div class="list-title val-red">
+              <span>✕</span> <span id="lbl-wrong-title">答錯 / 需要協助的題目</span>
+            </div>
+            <div id="wrong-list-container"></div>
+          </div>
+
+          <div data-html2canvas-ignore="true" style="margin-top: 20px;">
+            <button class="btn btn-purple" onclick="downloadReportImage()"><span id="lbl-btn-download">💾 下載報告圖片</span></button>
+            <button class="btn btn-sky" onclick="retryPractice()"><span id="lbl-btn-retry">🔄 我想再試</span></button>
+            <button class="btn btn-gray" onclick="goHome()"><span id="lbl-btn-home">回到主頁重新選擇</span></button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 通用 Modal -->
+  <div id="custom-modal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 id="modal-title">提示</h3>
+      <p id="modal-msg">內容訊息</p>
+      <div class="modal-buttons">
+        <button id="modal-cancel-btn" class="btn btn-gray" style="flex: 1;" onclick="closeModal()">取消</button>
+        <button id="modal-confirm-btn" class="btn btn-primary" style="flex: 1;" onclick="confirmModalAction()">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentLang = 'zh';
+    let currentMode = null;
+    let currentQIndex = 0;
+    let questions = [];
+    let records = [];
+    let wrongAttempts = 0;
+    let startTimeObj = null;
+    let modalActionCallback = null;
+
+    const i18n = {
+      zh: {
+        appTitle: '簡易方程(一)',
+        homeSubtitle: '請選擇學習單元',
+        u1Title: '單元一：一步方程求解',
+        u1Desc: '掌握加減乘除一步方程求解方法，學習天秤原理與代數式求值（包含初階加減、中階分數除法與高階綜合求值）。',
+        u2Title: '單元二：兩步方程求解',
+        u2Desc: '學習解包含混合運算（如乘加、乘減、除加、除減及括號方程）的兩步方程，掌握天秤原理雙重化簡與代數式求值。',
+        backBtn: '← 返回單元選擇',
+        qProgress: '題目',
+        lvlEasy: '初階',
+        lvlMed: '中階',
+        lvlHard: '高階',
+        inputPrefixAns: '答案：',
+        submitBtn: '提交答案',
+        nextBtn: '下一題 ➔',
+        promptText: '解下列方程或計算代數式的值：',
+        praise: ['太棒了！答對了！', '非常出色！計算完全正確！', '答得好！邏輯非常清晰！', '完全正確！太厲害了！'],
+        encourage: ['再試試看！你可以的！', '差一點點，仔細觀察方程的計算！', '沒關係，重新計算一下！'],
+        hintEasy: '提示：利用「天秤原理」（等式性質），方程兩邊同時進行加、減、乘或除。',
+        hintMedium: '提示：利用「天秤原理」（等式性質），分步驟消除常數與係數，求出未知數的值。',
+        hintHard: '提示：第一步先利用天秤原理解出未知數的值，第二步再代入目標代數式進行計算。',
+        verticalSolutionTitle: '📘 完整天秤原理解題步驟',
+        verticalSolutionSub: '依天秤原理（等式性質）詳細演算過程：',
+        correctAnsIs: '正確答案為：',
+        footerTip: '看懂天秤原理步驟後，請點擊下一題繼續練習！',
+        reportTitle: '練習完成！表現分析報告',
+        startTime: '開始時間：',
+        endTime: '完成時間：',
+        durationTime: '總用時：',
+        totalCorrect: '總答對題數：',
+        accuracy: '整體正確率：',
+        masteryTitle: '單元掌握度分析',
+        correctTitle: '答對的題目',
+        wrongTitle: '答錯 / 需要協助的題目',
+        noCorrect: '暫無第一次即答對的題目。',
+        noWrong: '太厲害了！完全沒有答錯的題目！',
+        questionLabel: '第 {n} 題',
+        ansLabel: '正確答案',
+        yourAnsLabel: '你的首次回答',
+        btnDownload: '💾 下載報告圖片',
+        btnRetry: '🔄 我想再試',
+        btnHome: '回到主頁重新選擇',
+        modalReturnTitle: '返回主頁提示',
+        modalReturnMsg: '離開將會重置目前的答題進度，確定要返回嗎？',
+        modalCancel: '取消',
+        modalStart: '確定'
+      },
+      en: {
+        appTitle: 'Simple Equations (I)',
+        homeSubtitle: 'Please Select a Learning Unit',
+        u1Title: 'Unit 1: One-step Equations',
+        u1Desc: 'Master solving one-step equations using +, -, ×, ÷, balance scale principle, and evaluating expressions.',
+        u2Title: 'Unit 2: Two-step Equations',
+        u2Desc: 'Master solving two-step equations involving combined operations, balance principle steps, and evaluating algebraic expressions.',
+        backBtn: '← Back to Menu',
+        qProgress: 'Question',
+        lvlEasy: 'Easy',
+        lvlMed: 'Medium',
+        lvlHard: 'Hard',
+        inputPrefixAns: 'Answer:',
+        submitBtn: 'Submit Answer',
+        nextBtn: 'Next Question ➔',
+        promptText: 'Solve the equation or evaluate the expression:',
+        praise: ['Excellent! Correct!', 'Great job! Perfect calculation!', 'Well done! Keep it up!', 'Awesome! You got it right!'],
+        encourage: ['Try again! You can do it!', 'Almost there, re-check your steps!', 'Don\'t worry, count it again!'],
+        hintEasy: 'Hint: Apply the balance scale principle by adding, subtracting, multiplying, or dividing on both sides.',
+        hintMedium: 'Hint: Apply the balance scale principle step by step to isolate the variable.',
+        hintHard: 'Hint: Step 1: Use the balance principle to solve for the variable. Step 2: Substitute its value into the given expression.',
+        verticalSolutionTitle: '📘 Complete Balance Scale Solution Steps',
+        verticalSolutionSub: 'Step-by-step solution based on Balance Scale Principle:',
+        correctAnsIs: 'Correct Answer: ',
+        footerTip: 'Review the solution steps, then click Next Question!',
+        reportTitle: 'Practice Complete! Performance Report',
+        startTime: 'Start Time:',
+        endTime: 'End Time:',
+        durationTime: 'Total Duration:',
+        totalCorrect: 'Total Correct:',
+        accuracy: 'Overall Accuracy:',
+        masteryTitle: 'Unit Mastery Analysis',
+        correctTitle: 'Correct Questions',
+        wrongTitle: 'Incorrect / Needs Improvement',
+        noCorrect: 'No questions answered correctly on first try.',
+        noWrong: 'Awesome! Perfect score with zero mistakes!',
+        questionLabel: 'Q{n}',
+        ansLabel: 'Correct Ans',
+        yourAnsLabel: 'Your 1st Try',
+        btnDownload: '💾 Download Report Image',
+        btnRetry: '🔄 Try Again',
+        btnHome: 'Back to Home Menu',
+        modalReturnTitle: 'Return to Home',
+        modalReturnMsg: 'Leaving will reset your current practice progress. Are you sure?',
+        modalCancel: 'Cancel',
+        modalStart: 'Confirm'
+      }
+    };
+
+    function toggleLanguage() {
+      currentLang = (currentLang === 'zh') ? 'en' : 'zh';
+      document.getElementById('lang-toggle-btn').innerText = (currentLang === 'zh') ? 'English' : '中文';
+      
+      document.getElementById('header-title').innerText = i18n[currentLang].appTitle;
+      document.getElementById('home-subtitle').innerText = i18n[currentLang].homeSubtitle;
+      document.getElementById('u1-title').innerText = i18n[currentLang].u1Title;
+      document.getElementById('u1-desc').innerText = i18n[currentLang].u1Desc;
+      document.getElementById('u2-title').innerText = i18n[currentLang].u2Title;
+      document.getElementById('u2-desc').innerText = i18n[currentLang].u2Desc;
+      document.getElementById('lbl-back-btn').innerText = i18n[currentLang].backBtn;
+
+      if (!document.getElementById('page-quiz').classList.contains('hidden')) {
+        const t = i18n[currentLang];
+        document.getElementById('question-prompt-text').innerText = t.promptText;
+        document.getElementById('input-prefix-label').innerText = t.inputPrefixAns;
+        document.getElementById('btn-submit').innerText = t.submitBtn;
+        document.getElementById('btn-next').innerText = t.nextBtn;
+        loadQuestionDisplayOnly();
+      }
+    }
+
+    function handleKeyPress(e) {
+      if (e.key === 'Enter') {
+        const btnSubmit = document.getElementById('btn-submit');
+        const btnNext = document.getElementById('btn-next');
+        if (!btnSubmit.classList.contains('hidden')) {
+          checkAnswer();
+        } else if (!btnNext.classList.contains('hidden')) {
+          nextQuestion();
+        }
+      }
+    }
+
+    // Helper: 陣列隨機洗牌
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Helper: 檢查未知數的值是否符合規範（2位數，或3位數且個位數為0）
+    function isValidVariableValue(val) {
+      if (!Number.isInteger(val)) return false;
+      if (val >= 1 && val <= 99) return true;
+      if (val >= 100 && val <= 990 && val % 10 === 0) return true;
+      return false;
+    }
+
+    /*
+      單元一題目生成邏輯：
+      每次產生 10 題，題目不可重覆，依難度由低至高排序：
+      - 若需用除法做解（如 a*v = b 或求 v/k）：
+        除數 (a 或 k) 嚴格為一位數 (2~9) 或整10數 (10, 20, 30...90)
+        未知數 (v) 亦為 1 至 2 位數 (1~99)，方便學生心算
+      - 3 題初階題目：只有加減，沒有乘除
+      - 3 題中階題目：只有乘除，除法以分數表示
+      - 4 題高階題目：混合 4 種一步方程與目標代數式求值
+    */
+    function generateUnit1Questions() {
+      const usedKeys = new Set();
+      const easyPool = [];
+      const medPool = [];
+      const hardPool = [];
+
+      const vars = ['A', 'B', 'C', 'd', 'f', 'h', 'k', 'm', 'n', 'p', 'r', 't', 'x', 'y', 'M', 'R'];
+
+      // 一位數 (2~9) 及整十數 (10, 20, ..., 90) 作為除法解的除數，方便心算
+      const validDivisors = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90];
+
+      // 1 至 2 位數 (1~99) 作為未知數
+      const validVForDiv = [];
+      for (let v = 1; v <= 99; v++) validVForDiv.push(v);
+
+      // 生成加減法可用的未知數解 (1~99, 100~990尾數為0)
+      const validVValues = [];
+      for (let v = 1; v <= 99; v++) validVValues.push(v);
+      for (let v = 100; v <= 990; v += 10) validVValues.push(v);
+
+      // 1. 初階池 (只有加減，沒有減代數情況)
+      for (let v of vars) {
+        for (let val of validVValues) {
+          for (let a of [11, 14, 17, 20, 22, 25, 30, 39, 46, 53]) {
+            // 加法: v + a = b
+            let b = val + a;
+            easyPool.push({
+              level: 'easy',
+              key: `${v}+${a}=${b}`,
+              displayHtml: `${v} + ${a} = ${b}`,
+              displayText: `${v} + ${a} = ${b}`,
+              ans: val.toString(),
+              type: 'add1',
+              varName: v, a: a, b: b, val: val
+            });
+
+            // 加法: a + v = b
+            easyPool.push({
+              level: 'easy',
+              key: `${a}+${v}=${b}`,
+              displayHtml: `${a} + ${v} = ${b}`,
+              displayText: `${a} + ${v} = ${b}`,
+              ans: val.toString(),
+              type: 'add2',
+              varName: v, a: a, b: b, val: val
+            });
+
+            // 減法: v - a = b (v 為被減數)
+            if (val > a) {
+              let subB = val - a;
+              easyPool.push({
+                level: 'easy',
+                key: `${v}-${a}=${subB}`,
+                displayHtml: `${v} - ${a} = ${subB}`,
+                displayText: `${v} - ${a} = ${subB}`,
+                ans: val.toString(),
+                type: 'sub1',
+                varName: v, a: a, b: subB, val: val
+              });
+
+              easyPool.push({
+                level: 'easy',
+                key: `${subB}=${v}-${a}`,
+                displayHtml: `${subB} = ${v} - ${a}`,
+                displayText: `${subB} = ${v} - ${a}`,
+                ans: val.toString(),
+                type: 'sub2',
+                varName: v, a: a, b: subB, val: val
+              });
+            }
+          }
+        }
+      }
+
+      // 2. 中階池 (只有乘除，除法以分數表示，無除以代數)
+      for (let v of vars) {
+        for (let val of validVForDiv) {
+          for (let a of validDivisors) {
+            let prod = a * val;
+            if (prod <= 990) {
+              medPool.push({
+                level: 'medium',
+                key: `${a}${v}=${prod}`,
+                displayHtml: `${a}${v} = ${prod}`,
+                displayText: `${a}${v} = ${prod}`,
+                ans: val.toString(),
+                type: 'mult1',
+                varName: v, a: a, b: prod, val: val
+              });
+
+              medPool.push({
+                level: 'medium',
+                key: `${prod}=${a}${v}`,
+                displayHtml: `${prod} = ${a}${v}`,
+                displayText: `${prod} = ${a}${v}`,
+                ans: val.toString(),
+                type: 'mult2',
+                varName: v, a: a, b: prod, val: val
+              });
+            }
+
+            if (val % a === 0) {
+              let divB = val / a;
+              let fracHtml = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span> = ${divB}`;
+              let fracText = `${v} / ${a} = ${divB}`;
+              medPool.push({
+                level: 'medium',
+                key: `${v}/${a}=${divB}`,
+                displayHtml: fracHtml,
+                displayText: fracText,
+                ans: val.toString(),
+                type: 'div1',
+                varName: v, a: a, b: divB, val: val
+              });
+
+              let fracHtml2 = `${divB} = <span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span>`;
+              let fracText2 = `${divB} = ${v} / ${a}`;
+              medPool.push({
+                level: 'medium',
+                key: `${divB}=${v}/${a}`,
+                displayHtml: fracHtml2,
+                displayText: fracText2,
+                ans: val.toString(),
+                type: 'div2',
+                varName: v, a: a, b: divB, val: val
+              });
+            }
+          }
+        }
+      }
+
+      // 3. 高階池 (混合4種一步方程，目標代數式混合不同數字與運算符號 +,-,×,÷)
+      const baseEqCandidates = [];
+      for (let v of vars) {
+        // 加法與減法基礎方程
+        for (let val of validVValues) {
+          for (let a of [3, 4, 5, 6, 7, 8, 9, 12, 15, 18, 24]) {
+            let b = val + a;
+            baseEqCandidates.push({ type: 'add1', v: v, val: val, a: a, b: b, eqHtml: `${v} + ${a} = ${b}`, eqText: `${v} + ${a} = ${b}` });
+          }
+          for (let a of [3, 4, 5, 6, 7, 8, 9, 12, 15, 18, 25, 34]) {
+            if (val > a) {
+              let b = val - a;
+              baseEqCandidates.push({ type: 'sub1', v: v, val: val, a: a, b: b, eqHtml: `${v} - ${a} = ${b}`, eqText: `${v} - ${a} = ${b}` });
+            }
+          }
+        }
+
+        // 乘法與除法基礎方程（除數嚴格為 1位數 或 整十數，未知數 val 1~99）
+        for (let val of validVForDiv) {
+          for (let a of validDivisors) {
+            let b = a * val;
+            if (b <= 990) {
+              baseEqCandidates.push({ type: 'mult1', v: v, val: val, a: a, b: b, eqHtml: `${a}${v} = ${b}`, eqText: `${a}${v} = ${b}` });
+            }
+            if (val % a === 0) {
+              let b = val / a;
+              let fracHtml = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span> = ${b}`;
+              baseEqCandidates.push({ type: 'div1', v: v, val: val, a: a, b: b, eqHtml: fracHtml, eqText: `${v} / ${a} = ${b}` });
+            }
+          }
+        }
+      }
+
+      // 組合目標代數式 (乘法, 除法分數, 加法, 減法)
+      const targetOps = ['mult', 'div', 'add', 'sub'];
+      for (let base of shuffle(baseEqCandidates)) {
+        let v = base.v;
+        let val = base.val;
+
+        for (let targetOp of targetOps) {
+          if (targetOp === 'mult') {
+            for (let k of [2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+              let ansVal = k * val;
+              if (ansVal <= 990) {
+                hardPool.push({
+                  level: 'hard',
+                  key: `hard_${base.type}_mult_${v}_${val}_${base.a}_k${k}`,
+                  type: base.type,
+                  varName: v, a: base.a, b: base.b, val: val,
+                  eqHtml: base.eqHtml,
+                  eqText: base.eqText,
+                  targetHtml: `${k}${v}`,
+                  targetText: `${k}${v}`,
+                  targetCalcText: `${k}${v} = ${k} × ${val} = ${ansVal}`,
+                  ans: ansVal.toString()
+                });
+              }
+            }
+          } else if (targetOp === 'div') {
+            // 目標代數式除法：除數 k 亦需為 1 位數 (2~9) 或整十數 (10, 20...)
+            for (let k of validDivisors) {
+              if (val % k === 0 && k !== base.a) {
+                let ansVal = val / k;
+                let targetFrac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${k}</span></span>`;
+                let targetFracVal = `<span class="math-frac"><span class="numerator">${val}</span><span class="denominator">${k}</span></span>`;
+                hardPool.push({
+                  level: 'hard',
+                  key: `hard_${base.type}_div_${v}_${val}_${base.a}_k${k}`,
+                  type: base.type,
+                  varName: v, a: base.a, b: base.b, val: val,
+                  eqHtml: base.eqHtml,
+                  eqText: base.eqText,
+                  targetHtml: targetFrac,
+                  targetText: `${v} / ${k}`,
+                  targetCalcText: `${targetFrac} = ${targetFracVal} = ${ansVal}`,
+                  ans: ansVal.toString()
+                });
+              }
+            }
+          } else if (targetOp === 'add') {
+            for (let c of [2, 4, 5, 7, 9, 12, 15, 20]) {
+              if (c !== base.a) {
+                let ansVal = val + c;
+                hardPool.push({
+                  level: 'hard',
+                  key: `hard_${base.type}_add_${v}_${val}_${base.a}_c${c}`,
+                  type: base.type,
+                  varName: v, a: base.a, b: base.b, val: val,
+                  eqHtml: base.eqHtml,
+                  eqText: base.eqText,
+                  targetHtml: `${v} + ${c}`,
+                  targetText: `${v} + ${c}`,
+                  targetCalcText: `${v} + ${c} = ${val} + ${c} = ${ansVal}`,
+                  ans: ansVal.toString()
+                });
+              }
+            }
+          } else if (targetOp === 'sub') {
+            for (let c of [2, 4, 5, 7, 9, 12, 15, 20]) {
+              if (val > c && c !== base.a) {
+                let ansVal = val - c;
+                hardPool.push({
+                  level: 'hard',
+                  key: `hard_${base.type}_sub_${v}_${val}_${base.a}_c${c}`,
+                  type: base.type,
+                  varName: v, a: base.a, b: base.b, val: val,
+                  eqHtml: base.eqHtml,
+                  eqText: base.eqText,
+                  targetHtml: `${v} - ${c}`,
+                  targetText: `${v} - ${c}`,
+                  targetCalcText: `${v} - ${c} = ${val} - ${c} = ${ansVal}`,
+                  ans: ansVal.toString()
+                });
+              }
+            }
+          }
+        }
+        if (hardPool.length > 800) break;
+      }
+
+      // 抽取題目：3初階、3中階、4高階
+      const questions = [];
+
+      const shuffledEasy = shuffle(easyPool);
+      let easyCount = 0;
+      for (let item of shuffledEasy) {
+        if (!usedKeys.has(item.key) && isValidVariableValue(item.val)) {
+          usedKeys.add(item.key);
+          questions.push(item);
+          easyCount++;
+          if (easyCount === 3) break;
+        }
+      }
+
+      const shuffledMed = shuffle(medPool);
+      let medCount = 0;
+      for (let item of shuffledMed) {
+        if (!usedKeys.has(item.key) && isValidVariableValue(item.val)) {
+          usedKeys.add(item.key);
+          questions.push(item);
+          medCount++;
+          if (medCount === 3) break;
+        }
+      }
+
+      const shuffledHard = shuffle(hardPool);
+      let hardCount = 0;
+      const targetOpsUsed = new Set();
+      
+      // 優先抽選不同運算符號 (+,-,×,÷) 的高階題目，增加變化度
+      for (let item of shuffledHard) {
+        let opType = item.targetCalcText.includes('×') ? 'mult' :
+                     item.targetCalcText.includes('denominator') ? 'div' :
+                     item.targetCalcText.includes('+') ? 'add' : 'sub';
+        let key = item.key;
+        if (!usedKeys.has(key) && isValidVariableValue(item.val) && !targetOpsUsed.has(opType)) {
+          usedKeys.add(key);
+          targetOpsUsed.add(opType);
+          questions.push(item);
+          hardCount++;
+          if (hardCount === 4) break;
+        }
+      }
+
+      if (hardCount < 4) {
+        for (let item of shuffledHard) {
+          let key = item.key;
+          if (!usedKeys.has(key) && isValidVariableValue(item.val)) {
+            usedKeys.add(key);
+            questions.push(item);
+            hardCount++;
+            if (hardCount === 4) break;
+          }
+        }
+      }
+
+      return questions;
+    }
+
+    /*
+      單元二題目生成邏輯（兩步方程求解）：
+      每次產生 10 題，題目不可重覆，依難度由低至高排序：
+      - 6 題初階題目：從 8 種運算組合中隨機選取 6 種題型
+      - 4 題中階題目：兩步方程求解後，計算目標代數式的值（類似單元一高階題型）
+      - 保證答案為正整數，適合小五學生心算
+    */
+    function generateUnit2Questions() {
+      const usedKeys = new Set();
+      const vars = ['a', 'b', 'd', 'e', 'f', 'h', 'k', 'm', 'n', 'r', 't', 'x', 'y', 'B', 'R'];
+      const validDivisors = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+      // 8 種組合類別的題目池
+      const poolByOp = {
+        mult_add: [], // 先乘再加: ax + b = c, b + ax = c
+        mult_sub: [], // 先乘再減: ax - b = c
+        div_add: [],  // 先除再加: x/a + b = c, b + x/a = c
+        div_sub: [],  // 先除再減: x/a - b = c, c = x/a - b
+        add_mult: [], // 先加再乘: a(x + b) = c
+        sub_mult: [], // 先減再乘: a(x - b) = c
+        add_div: [],  // 先加再除: (x + b)/a = c
+        sub_div: []   // 先減再除: (x - b)/a = c
+      };
+
+      for (let v of vars) {
+        for (let val = 1; val <= 50; val++) {
+
+          // 1. 先乘再加 (ax + b = c 或 b + ax = c)
+          for (let a of [2, 3, 4, 5, 6, 7, 8, 9]) {
+            for (let b of [3, 5, 7, 10, 12, 15, 20, 24, 39, 85]) {
+              let c = a * val + b;
+              if (c <= 150) {
+                let isLeft = Math.random() < 0.5;
+                let displayHtml = isLeft
+                  ? `${a}${v} + ${b} = ${c}`
+                  : `${b} + ${a}${v} = ${c}`;
+                let displayText = isLeft
+                  ? `${a}${v} + ${b} = ${c}`
+                  : `${b} + ${a}${v} = ${c}`;
+
+                poolByOp.mult_add.push({
+                  level: 'easy',
+                  key: `u2_ma_${v}_${val}_${a}_${b}_${isLeft}`,
+                  displayHtml: displayHtml,
+                  displayText: displayText,
+                  ans: val.toString(),
+                  type: 'mult_add',
+                  varName: v, a: a, b: b, c: c, val: val, isLeft: isLeft
+                });
+              }
+            }
+          }
+
+          // 2. 先乘再減 (ax - b = c)
+          for (let a of [2, 3, 4, 5, 6, 7, 8, 9]) {
+            for (let b of [3, 5, 10, 12, 15, 17, 20]) {
+              let c = a * val - b;
+              if (c > 0 && c <= 150) {
+                poolByOp.mult_sub.push({
+                  level: 'easy',
+                  key: `u2_ms_${v}_${val}_${a}_${b}`,
+                  displayHtml: `${a}${v} - ${b} = ${c}`,
+                  displayText: `${a}${v} - ${b} = ${c}`,
+                  ans: val.toString(),
+                  type: 'mult_sub',
+                  varName: v, a: a, b: b, c: c, val: val
+                });
+              }
+            }
+          }
+
+          // 3. 先除再加 (x/a + b = c 或 b + x/a = c)
+          for (let a of validDivisors) {
+            for (let b of [5, 10, 15, 20, 47, 85]) {
+              if (val % a === 0) {
+                let divVal = val / a;
+                let c = divVal + b;
+                if (c <= 150) {
+                  let isLeft = Math.random() < 0.5;
+                  let frac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span>`;
+                  let displayHtml = isLeft ? `${frac} + ${b} = ${c}` : `${b} + ${frac} = ${c}`;
+                  let displayText = isLeft ? `${v}/${a} + ${b} = ${c}` : `${b} + ${v}/${a} = ${c}`;
+
+                  poolByOp.div_add.push({
+                    level: 'easy',
+                    key: `u2_da_${v}_${val}_${a}_${b}_${isLeft}`,
+                    displayHtml: displayHtml,
+                    displayText: displayText,
+                    ans: val.toString(),
+                    type: 'div_add',
+                    varName: v, a: a, b: b, c: c, val: val, isLeft: isLeft
+                  });
+                }
+              }
+            }
+          }
+
+          // 4. 先除再減 (x/a - b = c 或 c = x/a - b)
+          for (let a of validDivisors) {
+            for (let b of [4, 8, 10, 15, 17, 20]) {
+              if (val % a === 0) {
+                let divVal = val / a;
+                if (divVal > b) {
+                  let c = divVal - b;
+                  let isRev = Math.random() < 0.5;
+                  let frac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span>`;
+                  let displayHtml = isRev ? `${c} = ${frac} - ${b}` : `${frac} - ${b} = ${c}`;
+                  let displayText = isRev ? `${c} = ${v}/${a} - ${b}` : `${v}/${a} - ${b} = ${c}`;
+
+                  poolByOp.div_sub.push({
+                    level: 'easy',
+                    key: `u2_ds_${v}_${val}_${a}_${b}_${isRev}`,
+                    displayHtml: displayHtml,
+                    displayText: displayText,
+                    ans: val.toString(),
+                    type: 'div_sub',
+                    varName: v, a: a, b: b, c: c, val: val, isRev: isRev
+                  });
+                }
+              }
+            }
+          }
+
+          // 5. 先加再乘: a(x + b) = c
+          for (let a of [2, 3, 4, 5, 6]) {
+            for (let b of [2, 3, 4, 5, 6, 8, 10]) {
+              let c = a * (val + b);
+              if (c <= 120) {
+                poolByOp.add_mult.push({
+                  level: 'easy',
+                  key: `u2_am_${v}_${val}_${a}_${b}`,
+                  displayHtml: `${a}(${v} + ${b}) = ${c}`,
+                  displayText: `${a}(${v} + ${b}) = ${c}`,
+                  ans: val.toString(),
+                  type: 'add_mult',
+                  varName: v, a: a, b: b, c: c, val: val
+                });
+              }
+            }
+          }
+
+          // 6. 先減再乘: a(x - b) = c
+          for (let a of [2, 3, 4, 5, 6]) {
+            for (let b of [2, 3, 4, 5, 6, 8]) {
+              if (val > b) {
+                let c = a * (val - b);
+                if (c <= 120) {
+                  poolByOp.sub_mult.push({
+                    level: 'easy',
+                    key: `u2_sm_${v}_${val}_${a}_${b}`,
+                    displayHtml: `${a}(${v} - ${b}) = ${c}`,
+                    displayText: `${a}(${v} - ${b}) = ${c}`,
+                    ans: val.toString(),
+                    type: 'sub_mult',
+                    varName: v, a: a, b: b, c: c, val: val
+                  });
+                }
+              }
+            }
+          }
+
+          // 7. 先加再除: (x + b)/a = c
+          for (let a of [2, 3, 4, 5, 6]) {
+            for (let b of [2, 4, 6, 8, 10]) {
+              for (let c of [3, 4, 5, 6, 7, 8]) {
+                if (c * a > b) {
+                  let vVal = c * a - b;
+                  let frac = `<span class="math-frac"><span class="numerator">${v} + ${b}</span><span class="denominator">${a}</span></span> = ${c}`;
+                  poolByOp.add_div.push({
+                    level: 'easy',
+                    key: `u2_ad_${v}_${vVal}_${a}_${b}_${c}`,
+                    displayHtml: frac,
+                    displayText: `(${v} + ${b})/${a} = ${c}`,
+                    ans: vVal.toString(),
+                    type: 'add_div',
+                    varName: v, a: a, b: b, c: c, val: vVal
+                  });
+                }
+              }
+            }
+          }
+
+          // 8. 先減再除: (x - b)/a = c (參考 image_4a3561 形式之基礎方程)
+          for (let a of [2, 3, 4, 5, 6]) {
+            for (let b of [2, 4, 6, 8, 10]) {
+              for (let c of [3, 4, 5, 6, 7, 8]) {
+                let vVal = c * a + b;
+                if (vVal <= 99) {
+                  let frac = `<span class="math-frac"><span class="numerator">${v} - ${b}</span><span class="denominator">${a}</span></span> = ${c}`;
+                  poolByOp.sub_div.push({
+                    level: 'easy',
+                    key: `u2_sd_${v}_${vVal}_${a}_${b}_${c}`,
+                    displayHtml: frac,
+                    displayText: `(${v} - ${b})/${a} = ${c}`,
+                    ans: vVal.toString(),
+                    type: 'sub_div',
+                    varName: v, a: a, b: b, c: c, val: vVal
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
+      const questions = [];
+      const opKeys = ['mult_add', 'mult_sub', 'div_add', 'div_sub', 'add_mult', 'sub_mult', 'add_div', 'sub_div'];
+
+      // 1. 生成 6 題初階題目：從 8 種運算類型中隨機挑選 6 種 (每種 1 題)
+      let easyCount = 0;
+      for (let op of shuffle(opKeys)) {
+        const pool = shuffle(poolByOp[op]);
+        for (let item of pool) {
+          if (!usedKeys.has(item.key) && isValidVariableValue(item.val)) {
+            usedKeys.add(item.key);
+            questions.push(item);
+            easyCount++;
+            break;
+          }
+        }
+        if (easyCount === 6) break;
+      }
+
+      // 2. 生成 4 題中階題目：兩步方程求解後計算目標代數式的值 (對應 image_4a3561)
+      const mediumPool = [];
+      const allEasyCandidates = [];
+      for (let op of opKeys) {
+        allEasyCandidates.push(...poolByOp[op]);
+      }
+
+      for (let base of shuffle(allEasyCandidates)) {
+        let v = base.varName;
+        let val = base.val;
+
+        // 生成目標代數式 (乘法 3m, 加法 m+10, 減法 m-5, 除法 m/2)
+        const targetTypes = ['mult', 'add', 'sub', 'div'];
+        for (let tType of targetTypes) {
+          if (tType === 'mult') {
+            for (let k of [2, 3, 4, 5, 6]) {
+              let ansVal = k * val;
+              if (ansVal <= 250) {
+                mediumPool.push({
+                  level: 'medium',
+                  key: `u2_med_mult_${base.key}_k${k}`,
+                  type: base.type,
+                  varName: v, a: base.a, b: base.b, c: base.c, val: val,
+                  eqHtml: base.displayHtml,
+                  eqText: base.displayText,
+                  targetHtml: `${k}${v}`,
+                  targetText: `${k}${v}`,
+                  targetCalcText: `${k}${v} = ${k} × ${val} = ${ansVal}`,
+                  ans: ansVal.toString()
+                });
+              }
+            }
+          } else if (tType === 'add') {
+            for (let cVal of [3, 5, 8, 10, 12, 15]) {
+              let ansVal = val + cVal;
+              mediumPool.push({
+                level: 'medium',
+                key: `u2_med_add_${base.key}_c${cVal}`,
+                type: base.type,
+                varName: v, a: base.a, b: base.b, c: base.c, val: val,
+                eqHtml: base.displayHtml,
+                eqText: base.displayText,
+                targetHtml: `${v} + ${cVal}`,
+                targetText: `${v} + ${cVal}`,
+                targetCalcText: `${v} + ${cVal} = ${val} + ${cVal} = ${ansVal}`,
+                ans: ansVal.toString()
+              });
+            }
+          } else if (tType === 'sub') {
+            for (let cVal of [2, 4, 5, 8, 10]) {
+              if (val > cVal) {
+                let ansVal = val - cVal;
+                mediumPool.push({
+                  level: 'medium',
+                  key: `u2_med_sub_${base.key}_c${cVal}`,
+                  type: base.type,
+                  varName: v, a: base.a, b: base.b, c: base.c, val: val,
+                  eqHtml: base.displayHtml,
+                  eqText: base.displayText,
+                  targetHtml: `${v} - ${cVal}`,
+                  targetText: `${v} - ${cVal}`,
+                  targetCalcText: `${v} - ${cVal} = ${val} - ${cVal} = ${ansVal}`,
+                  ans: ansVal.toString()
+                });
+              }
+            }
+          } else if (tType === 'div') {
+            for (let k of [2, 3, 4, 5]) {
+              if (val % k === 0) {
+                let ansVal = val / k;
+                let targetFrac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${k}</span></span>`;
+                let targetFracVal = `<span class="math-frac"><span class="numerator">${val}</span><span class="denominator">${k}</span></span>`;
+                mediumPool.push({
+                  level: 'medium',
+                  key: `u2_med_div_${base.key}_k${k}`,
+                  type: base.type,
+                  varName: v, a: base.a, b: base.b, c: base.c, val: val,
+                  eqHtml: base.displayHtml,
+                  eqText: base.displayText,
+                  targetHtml: targetFrac,
+                  targetText: `${v}/${k}`,
+                  targetCalcText: `${targetFrac} = ${targetFracVal} = ${ansVal}`,
+                  ans: ansVal.toString()
+                });
+              }
+            }
+          }
+        }
+        if (mediumPool.length > 300) break;
+      }
+
+      let medCount = 0;
+      const targetTypesUsed = new Set();
+      const shuffledMed = shuffle(mediumPool);
+
+      // 優先抽取涵蓋不同目標運算 (+, -, ×, ÷) 的中階題，確保豐富度
+      for (let item of shuffledMed) {
+        let opType = item.targetCalcText.includes('×') ? 'mult' :
+                     item.targetCalcText.includes('denominator') ? 'div' :
+                     item.targetCalcText.includes('+') ? 'add' : 'sub';
+        if (!usedKeys.has(item.key) && isValidVariableValue(item.val) && !targetTypesUsed.has(opType)) {
+          usedKeys.add(item.key);
+          targetTypesUsed.add(opType);
+          questions.push(item);
+          medCount++;
+          if (medCount === 4) break;
+        }
+      }
+
+      if (medCount < 4) {
+        for (let item of shuffledMed) {
+          if (!usedKeys.has(item.key) && isValidVariableValue(item.val)) {
+            usedKeys.add(item.key);
+            questions.push(item);
+            medCount++;
+            if (medCount === 4) break;
+          }
+        }
+      }
+
+      return questions;
+    }
+
+    function startQuiz(mode) {
+      currentMode = mode;
+      if (mode === 'unit1') questions = generateUnit1Questions();
+      else if (mode === 'unit2') questions = generateUnit2Questions();
+
+      currentQIndex = 0;
+      records = [];
+      startTimeObj = new Date();
+
+      document.getElementById('page-home').classList.add('hidden');
+      document.getElementById('page-report').classList.add('hidden');
+      document.getElementById('page-quiz').classList.remove('hidden');
+      document.getElementById('lang-toggle-btn').classList.add('hidden');
+
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      wrongAttempts = 0;
+      const t = i18n[currentLang];
+      const q = questions[currentQIndex];
+
+      let modeName = (currentMode === 'unit1') ? t.u1Title : t.u2Title;
+
+      document.getElementById('quiz-mode-name').innerText = modeName;
+      document.getElementById('quiz-progress-text').innerText = `${t.qProgress} ${currentQIndex + 1} / ${questions.length}`;
+
+      const lvlBadge = document.getElementById('quiz-level-badge');
+      if (q.level) {
+        lvlBadge.classList.remove('hidden');
+        if (q.level === 'easy') {
+          lvlBadge.className = 'level-badge level-easy';
+          lvlBadge.innerText = t.lvlEasy;
+        } else if (q.level === 'medium') {
+          lvlBadge.className = 'level-badge level-medium';
+          lvlBadge.innerText = t.lvlMed;
+        } else {
+          lvlBadge.className = 'level-badge level-hard';
+          lvlBadge.innerText = t.lvlHard;
+        }
+      } else {
+        lvlBadge.classList.add('hidden');
+      }
+
+      document.getElementById('question-prompt-text').innerText = t.promptText;
+
+      loadQuestionDisplayOnly();
+
+      document.getElementById('input-prefix-label').innerText = t.inputPrefixAns;
+
+      const input = document.getElementById('answer-input');
+      input.value = '';
+      input.disabled = false;
+      
+      setTimeout(() => input.focus(), 100);
+
+      document.getElementById('feedback-area').classList.add('hidden');
+      document.getElementById('feedback-area').innerHTML = '';
+      
+      document.getElementById('btn-submit').classList.remove('hidden');
+      document.getElementById('btn-next').classList.add('hidden');
+      document.getElementById('btn-next').innerText = t.nextBtn;
+      document.getElementById('btn-submit').innerText = t.submitBtn;
+    }
+
+    function loadQuestionDisplayOnly() {
+      const q = questions[currentQIndex];
+      const displayElem = document.getElementById('math-expr-display');
+
+      if ((currentMode === 'unit1' && q.level === 'hard') || (currentMode === 'unit2' && q.level === 'medium')) {
+        if (currentLang === 'zh') {
+          displayElem.style.fontSize = '1.6rem';
+          displayElem.innerHTML = `若 ${q.eqHtml}，求 ${q.targetHtml} 的值。`;
+        } else {
+          displayElem.style.fontSize = '1.35rem';
+          displayElem.innerHTML = `If ${q.eqHtml}, what is the value of ${q.targetHtml}?`;
+        }
+      } else {
+        displayElem.style.fontSize = '';
+        displayElem.innerHTML = `${q.displayHtml}`;
+      }
+    }
+
+    // 產生天秤原理步驟 HTML (完全參考 image_927427, image_926d60, image_4a393e)
+    function buildBalanceScaleStepsHTML(q) {
+      let v = q.varName;
+      let html = '';
+
+      if (q.type === 'mult_add') {
+        // 例: 5d + 15 = 65 -> 5d + 15 - 15 = 65 - 15 -> 5d = 50 -> 5d ÷ 5 = 50 ÷ 5 -> d = 10
+        let step1Val = q.c - q.b;
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line">${q.displayText}</div>
+            <div class="balance-line">${q.a}${v} + ${q.b} - <span class="pink-txt">${q.b}</span> = ${q.c} - <span class="pink-txt">${q.b}</span></div>
+            <div class="balance-line">${q.a}${v} = <span class="pink-txt">${step1Val}</span></div>
+            <div class="balance-line">${q.a}${v} ÷ <span class="pink-txt">${q.a}</span> = ${step1Val} ÷ <span class="pink-txt">${q.a}</span></div>
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      } else if (q.type === 'mult_sub') {
+        // 例: 5d - 15 = 65 -> 5d - 15 + 15 = 65 + 15 -> 5d = 80 -> 5d ÷ 5 = 80 ÷ 5 -> d = 16
+        let step1Val = q.c + q.b;
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line">${q.a}${v} - ${q.b} = ${q.c}</div>
+            <div class="balance-line">${q.a}${v} - ${q.b} + <span class="pink-txt">${q.b}</span> = ${q.c} + <span class="pink-txt">${q.b}</span></div>
+            <div class="balance-line">${q.a}${v} = <span class="pink-txt">${step1Val}</span></div>
+            <div class="balance-line">${q.a}${v} ÷ <span class="pink-txt">${q.a}</span> = ${step1Val} ÷ <span class="pink-txt">${q.a}</span></div>
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      } else if (q.type === 'div_add') {
+        // 例: e/11 + 47 = 58 -> e/11 + 47 - 47 = 58 - 47 -> e/11 = 11 -> e/11 * 11 = 11 * 11 -> e = 121
+        let step1Val = q.c - q.b;
+        let frac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${q.a}</span></span>`;
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line">${q.displayHtml}</div>
+            <div class="balance-line">${frac} + ${q.b} - <span class="pink-txt">${q.b}</span> = ${q.c} - <span class="pink-txt">${q.b}</span></div>
+            <div class="balance-line">${frac} = <span class="pink-txt">${step1Val}</span></div>
+            <div class="balance-line">${frac} × <span class="pink-txt">${q.a}</span> = ${step1Val} × <span class="pink-txt">${q.a}</span></div>
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      } else if (q.type === 'div_sub') {
+        // 例: r/10 - 20 = 60 -> r/10 - 20 + 20 = 60 + 20 -> r/10 = 80 -> r = 800
+        let step1Val = q.c + q.b;
+        let frac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${q.a}</span></span>`;
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line">${q.displayHtml}</div>
+            <div class="balance-line">${frac} - ${q.b} + <span class="pink-txt">${q.b}</span> = ${q.c} + <span class="pink-txt">${q.b}</span></div>
+            <div class="balance-line">${frac} = <span class="pink-txt">${step1Val}</span></div>
+            <div class="balance-line">${frac} × <span class="pink-txt">${q.a}</span> = ${step1Val} × <span class="pink-txt">${q.a}</span></div>
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      } else if (q.type === 'add_mult') {
+        // 例: a(v + b) = c -> a(v + b) ÷ a = c ÷ a -> v + b = c/a -> v = c/a - b
+        let step1Val = q.c / q.a;
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line">${q.a}(${v} + ${q.b}) = ${q.c}</div>
+            <div class="balance-line">${q.a}(${v} + ${q.b}) ÷ <span class="pink-txt">${q.a}</span> = ${q.c} ÷ <span class="pink-txt">${q.a}</span></div>
+            <div class="balance-line">${v} + ${q.b} = <span class="pink-txt">${step1Val}</span></div>
+            <div class="balance-line">${v} + ${q.b} - <span class="pink-txt">${q.b}</span> = ${step1Val} - <span class="pink-txt">${q.b}</span></div>
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      } else if (q.type === 'sub_mult') {
+        // 例: a(v - b) = c -> a(v - b) ÷ a = c ÷ a -> v - b = c/a -> v = c/a + b
+        let step1Val = q.c / q.a;
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line">${q.a}(${v} - ${q.b}) = ${q.c}</div>
+            <div class="balance-line">${q.a}(${v} - ${q.b}) ÷ <span class="pink-txt">${q.a}</span> = ${q.c} ÷ <span class="pink-txt">${q.a}</span></div>
+            <div class="balance-line">${v} - ${q.b} = <span class="pink-txt">${step1Val}</span></div>
+            <div class="balance-line">${v} - ${q.b} + <span class="pink-txt">${q.b}</span> = ${step1Val} + <span class="pink-txt">${q.b}</span></div>
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      } else if (q.type === 'add_div') {
+        // 例: (v + b)/a = c -> (v + b)/a * a = c * a -> v + b = c*a -> v = c*a - b
+        let step1Val = q.c * q.a;
+        let frac = `<span class="math-frac"><span class="numerator">${v} + ${q.b}</span><span class="denominator">${q.a}</span></span>`;
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line">${frac} = ${q.c}</div>
+            <div class="balance-line">${frac} × <span class="pink-txt">${q.a}</span> = ${q.c} × <span class="pink-txt">${q.a}</span></div>
+            <div class="balance-line">${v} + ${q.b} = <span class="pink-txt">${step1Val}</span></div>
+            <div class="balance-line">${v} + ${q.b} - <span class="pink-txt">${q.b}</span> = ${step1Val} - <span class="pink-txt">${q.b}</span></div>
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      } else if (q.type === 'sub_div') {
+        // 例: (v - b)/a = c -> (v - b)/a * a = c * a -> v - b = c*a -> v = c*a + b
+        let step1Val = q.c * q.a;
+        let frac = `<span class="math-frac"><span class="numerator">${v} - ${q.b}</span><span class="denominator">${q.a}</span></span>`;
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line">${frac} = ${q.c}</div>
+            <div class="balance-line">${frac} × <span class="pink-txt">${q.a}</span> = ${q.c} × <span class="pink-txt">${q.a}</span></div>
+            <div class="balance-line">${v} - ${q.b} = <span class="pink-txt">${step1Val}</span></div>
+            <div class="balance-line">${v} - ${q.b} + <span class="pink-txt">${q.b}</span> = ${step1Val} + <span class="pink-txt">${q.b}</span></div>
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      } else if (q.type === 'add1' || q.type === 'add2') {
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line">${v} + ${q.a} = ${q.b}</div>
+            <div class="balance-line">${v} + ${q.a} - <span class="pink-txt">${q.a}</span> = ${q.b} - <span class="pink-txt">${q.a}</span></div>
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      } else if (q.type === 'sub1' || q.type === 'sub2') {
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line">${v} - ${q.a} = ${q.b}</div>
+            <div class="balance-line">${v} - ${q.a} + <span class="pink-txt">${q.a}</span> = ${q.b} + <span class="pink-txt">${q.a}</span></div>
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      } else if (q.type === 'mult1' || q.type === 'mult2') {
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line">${q.a}${v} = ${q.b}</div>
+            <div class="balance-line">${q.a}${v} ÷ <span class="pink-txt">${q.a}</span> = ${q.b} ÷ <span class="pink-txt">${q.a}</span></div>
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      } else if (q.type === 'div1' || q.type === 'div2') {
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line"><span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${q.a}</span></span> = ${q.b}</div>
+            <div class="balance-line"><span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${q.a}</span></span> × <span class="pink-txt">${q.a}</span> = ${q.b} × <span class="pink-txt">${q.a}</span></div>
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      } else {
+        html = `
+          <div class="balance-step-container">
+            <div class="balance-line">${v} = <span class="pink-txt">${q.val}</span></div>
+          </div>
+        `;
+      }
+      return html;
+    }
+
+    // 產生錯題步驟卡片
+    function renderSolutionCard(q) {
+      const t = i18n[currentLang];
+      let html = '';
+
+      let isComplexEval = (currentMode === 'unit1' && q.level === 'hard') || (currentMode === 'unit2' && q.level === 'medium');
+
+      if (!isComplexEval) {
+        let balanceHTML = buildBalanceScaleStepsHTML(q);
+        html = `
+          <div class="vertical-solution-card">
+            <div class="solution-header">${t.verticalSolutionTitle}</div>
+            <div class="solution-sub">${t.verticalSolutionSub}</div>
+            ${balanceHTML}
+            <div class="solution-footer-ans">${t.correctAnsIs} <strong style="color:#e53e3e; font-size:1.3rem;">${q.ans}</strong></div>
+            <div class="solution-footer-tip">${t.footerTip}</div>
+          </div>
+        `;
+      } else {
+        // 代數式求值題型：分兩步驟解題 (第一步天秤原理解未知數，第二步代入求目標代數式)
+        let v = q.varName;
+        let balanceHTML = buildBalanceScaleStepsHTML(q);
+
+        let step1Title = currentLang === 'zh' 
+          ? `步驟一：利用天秤原理解方程，求出未知數 ${v} 的值`
+          : `Step 1: Apply balance scale principle to solve for variable ${v}`;
+
+        let step2Title = currentLang === 'zh'
+          ? `步驟二：將 ${v} = ${q.val} 代入目標代數式計算`
+          : `Step 2: Substitute ${v} = ${q.val} into the target expression`;
+
+        html = `
+          <div class="vertical-solution-card">
+            <div class="solution-header">${t.verticalSolutionTitle}</div>
+            <div class="solution-sub">${t.verticalSolutionSub}</div>
+            
+            <div style="font-weight:bold; color:#2b6cb0; margin-top:10px; font-size:1rem;">${step1Title}</div>
+            ${balanceHTML}
+
+            <div style="font-weight:bold; color:#2b6cb0; margin-top:15px; font-size:1rem;">${step2Title}</div>
+            <div class="step-box" style="margin-top:8px;">
+              <div class="step-line">${q.targetCalcText || (q.targetText + ' = ' + q.ans)}</div>
+            </div>
+
+            <div class="solution-footer-ans">${t.correctAnsIs} <strong style="color:#e53e3e; font-size:1.3rem;">${q.ans}</strong></div>
+            <div class="solution-footer-tip">${t.footerTip}</div>
+          </div>
+        `;
+      }
+
+      return html;
+    }
+
+    function checkAnswer() {
+      const input = document.getElementById('answer-input');
+      const valStr = input.value.trim();
+      if (valStr === '') return;
+
+      const q = questions[currentQIndex];
+      const t = i18n[currentLang];
+      const feedback = document.getElementById('feedback-area');
+
+      const userNum = parseFloat(valStr);
+      const targetNum = parseFloat(q.ans);
+      const isCorrect = !isNaN(userNum) && Math.abs(userNum - targetNum) < 1e-6;
+
+      if (!records[currentQIndex]) {
+        records[currentQIndex] = {
+          qIndex: currentQIndex + 1,
+          questionObj: q,
+          targetAns: q.ans,
+          userFirstWrong: null,
+          isCorrectOnFirstTry: false,
+          solved: false
+        };
+      }
+
+      if (isCorrect) {
+        if (wrongAttempts === 0) {
+          records[currentQIndex].isCorrectOnFirstTry = true;
+        }
+        records[currentQIndex].solved = true;
+
+        const randomPraise = t.praise[Math.floor(Math.random() * t.praise.length)];
+        feedback.className = "feedback-box feedback-success";
+        feedback.innerHTML = `<strong>${randomPraise}</strong>`;
+        feedback.classList.remove('hidden');
+
+        input.disabled = true;
+        document.getElementById('btn-submit').classList.add('hidden');
+        document.getElementById('btn-next').classList.remove('hidden');
+        document.getElementById('btn-next').focus();
+
+      } else {
+        wrongAttempts++;
+        if (records[currentQIndex].userFirstWrong === null) {
+          records[currentQIndex].userFirstWrong = valStr;
+        }
+
+        if (wrongAttempts < 2) {
+          const randomEnc = t.encourage[Math.floor(Math.random() * t.encourage.length)];
+          let hintText = t.hintEasy;
+          if (q.level === 'medium') hintText = t.hintMedium;
+          else if (q.level === 'hard') hintText = t.hintHard;
+
+          feedback.className = "feedback-box feedback-warning";
+          feedback.innerHTML = `
+            <div><strong>${randomEnc}</strong></div>
+            <div style="margin-top:6px; font-size:0.95rem; color:#744210;">${hintText}</div>
+          `;
+          feedback.classList.remove('hidden');
+
+          input.value = '';
+          input.focus();
+
+        } else {
+          // 第二次答錯：顯示天秤原理解題卡片
+          const solutionHTML = renderSolutionCard(q);
+          feedback.className = "feedback-box feedback-danger";
+          feedback.innerHTML = solutionHTML;
+          feedback.classList.remove('hidden');
+
+          input.disabled = true;
+          document.getElementById('btn-submit').classList.add('hidden');
+          document.getElementById('btn-next').classList.remove('hidden');
+          document.getElementById('btn-next').focus();
+        }
+      }
+    }
+
+    function nextQuestion() {
+      currentQIndex++;
+      if (currentQIndex < questions.length) {
+        loadQuestion();
+      } else {
+        showReport();
+      }
+    }
+
+    function formatDate(d) {
+      const pad = (n) => n.toString().padStart(2, '0');
+      const dateStr = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+      const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      return `${dateStr} ${timeStr}`;
+    }
+
+    function formatDuration(start, end) {
+      const diffInSeconds = Math.max(0, Math.floor((end - start) / 1000));
+      const mins = Math.floor(diffInSeconds / 60);
+      const secs = diffInSeconds % 60;
+
+      if (currentLang === 'en') {
+        if (mins > 0) return `${mins} min ${secs} sec`;
+        return `${secs} sec`;
+      } else {
+        if (mins > 0) return `${mins}分鐘${String(secs).padStart(2, '0')}秒`;
+        return `${secs}秒`;
+      }
+    }
+
+    function showReport() {
+      const endTimeObj = new Date();
+      const t = i18n[currentLang];
+
+      document.getElementById('page-quiz').classList.add('hidden');
+      document.getElementById('page-report').classList.remove('hidden');
+
+      document.getElementById('report-main-title').innerText = t.reportTitle;
+      document.getElementById('lbl-start-time').innerText = t.startTime;
+      document.getElementById('lbl-end-time').innerText = t.endTime;
+      document.getElementById('lbl-duration').innerText = t.durationTime;
+      document.getElementById('lbl-total-correct').innerText = t.totalCorrect;
+      document.getElementById('lbl-accuracy').innerText = t.accuracy;
+      document.getElementById('lbl-mastery-title').innerText = t.masteryTitle;
+      document.getElementById('lbl-correct-title').innerText = t.correctTitle;
+      document.getElementById('lbl-wrong-title').innerText = t.wrongTitle;
+
+      document.getElementById('lbl-btn-download').innerText = t.btnDownload;
+      document.getElementById('lbl-btn-retry').innerText = t.btnRetry;
+      document.getElementById('lbl-btn-home').innerText = t.btnHome;
+
+      document.getElementById('val-start-time').innerText = formatDate(startTimeObj);
+      document.getElementById('val-end-time').innerText = formatDate(endTimeObj);
+      document.getElementById('val-duration').innerText = formatDuration(startTimeObj, endTimeObj);
+
+      let correctCount = 0;
+      records.forEach(r => {
+        if (r.isCorrectOnFirstTry) correctCount++;
+      });
+
+      const total = records.length;
+      const accuracyPct = Math.round((correctCount / total) * 100);
+
+      document.getElementById('val-correct-count').innerText = `${correctCount} / ${total}`;
+      document.getElementById('val-accuracy').innerText = `${accuracyPct}%`;
+
+      let modeName = (currentMode === 'unit1') ? t.u1Title : t.u2Title;
+
+      document.getElementById('report-unit-name').innerText = `1. ${modeName}`;
+      document.getElementById('val-unit-mastery').innerText = `${correctCount} / ${total} (${accuracyPct}%)`;
+
+      const correctContainer = document.getElementById('correct-list-container');
+      correctContainer.innerHTML = '';
+      const correctItems = records.filter(r => r.isCorrectOnFirstTry);
+
+      if (correctItems.length === 0) {
+        correctContainer.innerHTML = `<div style="font-size:0.95rem; color:#718096; padding-left:5px;">${t.noCorrect}</div>`;
+      } else {
+        correctItems.forEach(item => {
+          const qText = t.questionLabel.replace('{n}', item.qIndex);
+          const pTxt = item.questionObj.level === 'hard'
+            ? `${item.questionObj.eqText} ➔ ${item.questionObj.targetText}`
+            : item.questionObj.displayText;
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'item-card-correct';
+          itemDiv.innerHTML = `
+            <div class="item-q-title">${qText} : ${pTxt}</div>
+            <div class="item-ans-text">${t.ansLabel} : ${item.targetAns}</div>
+          `;
+          correctContainer.appendChild(itemDiv);
+        });
+      }
+
+      const wrongContainer = document.getElementById('wrong-list-container');
+      wrongContainer.innerHTML = '';
+      const wrongItems = records.filter(r => !r.isCorrectOnFirstTry);
+
+      if (wrongItems.length === 0) {
+        wrongContainer.innerHTML = `<div style="font-size:0.95rem; color:#38a169; padding-left:5px;">${t.noWrong}</div>`;
+      } else {
+        wrongItems.forEach(item => {
+          const qText = t.questionLabel.replace('{n}', item.qIndex);
+          const pTxt = item.questionObj.level === 'hard'
+            ? `${item.questionObj.eqText} ➔ ${item.questionObj.targetText}`
+            : item.questionObj.displayText;
+          const userAnsDisplay = item.userFirstWrong !== null ? item.userFirstWrong : '-';
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'item-card-wrong';
+          itemDiv.innerHTML = `
+            <div class="item-q-title">${qText} : ${pTxt}</div>
+            <div class="item-ans-text">${t.yourAnsLabel} : ${userAnsDisplay} | ${t.correctAnsLabel} : ${item.targetAns}</div>
+          `;
+          wrongContainer.appendChild(itemDiv);
+        });
+      }
+    }
+
+    function downloadReportImage() {
+      const element = document.getElementById('report-card-to-capture');
+      if (!element) return;
+
+      html2canvas(element, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `Simple_Equations_Report_${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }).catch(err => {
+        alert("下載失敗，請稍後再試：" + err);
+      });
+    }
+
+    function openModal(title, msg, cancelTxt, confirmTxt, onConfirm) {
+      document.getElementById('modal-title').innerText = title;
+      document.getElementById('modal-msg').innerText = msg;
+      document.getElementById('modal-cancel-btn').innerText = cancelTxt;
+      document.getElementById('modal-confirm-btn').innerText = confirmTxt;
+      modalActionCallback = onConfirm;
+      document.getElementById('custom-modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('custom-modal').classList.remove('active');
+    }
+
+    function confirmModalAction() {
+      closeModal();
+      if (modalActionCallback) modalActionCallback();
+    }
+
+    function askReturnHome() {
+      const t = i18n[currentLang];
+      openModal(
+        t.modalReturnTitle,
+        t.modalReturnMsg,
+        t.modalCancel || '取消',
+        t.modalStart || '確定',
+        goHome
+      );
+    }
+
+    function retryPractice() {
+      startQuiz(currentMode || 'unit1');
+    }
+
+    function goHome() {
+      document.getElementById('page-quiz').classList.add('hidden');
+      document.getElementById('page-report').classList.add('hidden');
+      document.getElementById('page-home').classList.remove('hidden');
+      document.getElementById('lang-toggle-btn').classList.remove('hidden');
+    }
+  </script>
+  <script src="https://mathteacher1618.github.io/my_fixes/ipad_fix.js"></script>
+</body>
+</html>
