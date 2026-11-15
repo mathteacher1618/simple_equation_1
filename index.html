@@ -99,6 +99,8 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     .card:hover, .card:active {
@@ -578,13 +580,13 @@
       <div id="page-home">
         <h2 id="home-subtitle" class="page-title">請選擇學習單元</h2>
         <div class="menu-grid">
-          <div class="card" onclick="startQuiz('unit1')">
+          <div class="card" role="button" tabindex="0" onclick="startQuiz('unit1')">
             <h3 id="u1-title">單元一：一步方程求解</h3>
             <p id="u1-desc">掌握加減乘除一步方程求解方法，學習天秤原理與代數式求值（包含初階加減、中階分數除法與高階綜合求值）。</p>
           </div>
-          <div class="card" onclick="startQuiz('unit2')">
-            <h3 id="u2-title">單元二：方程應用與進階</h3>
-            <p id="u2-desc">進一步鞏固一步方程求解技巧，挑戰多樣化的代數變數與綜合代數式求值題型。</p>
+          <div class="card" role="button" tabindex="0" onclick="startQuiz('unit2')">
+            <h3 id="u2-title">單元二：兩步方程求解</h3>
+            <p id="u2-desc">學習解包含混合運算（如乘加、乘減、除加、除減及括號方程）的兩步方程，掌握天秤原理雙重化簡與代數式求值。</p>
           </div>
         </div>
       </div>
@@ -852,327 +854,256 @@
       return arr;
     }
 
+    // Helper: 隨機挑選陣列中的一個元素
+    function pickRandom(array) {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+
     // Helper: 檢查未知數的值是否符合規範（2位數，或3位數且個位數為0）
     function isValidVariableValue(val) {
       if (!Number.isInteger(val)) return false;
-      if (val >= 1 && val <= 99) return true;
+      if (val >= 10 && val <= 99) return true;
       if (val >= 100 && val <= 990 && val % 10 === 0) return true;
       return false;
     }
 
     /*
-      單元一題目生成邏輯：
+      單元一題目生成邏輯（直接隨機構造法，避免大量陣列運算導致 iPad 延遲）：
       每次產生 10 題，題目不可重覆，依難度由低至高排序：
-      - 若需用除法做解（如 a*v = b 或求 v/k）：
-        除數 (a 或 k) 嚴格為一位數 (2~9) 或整10數 (10, 20, 30...90)
-        未知數 (v) 亦為 1 至 2 位數 (1~99)，方便學生心算
-      - 3 題初階題目：只有加減，沒有乘除
-      - 3 題中階題目：只有乘除，除法以分數表示
-      - 4 題高階題目：混合 4 種一步方程與目標代數式求值
+      - 3 題初階題目：只有加減，沒有乘除，沒有減代數情況
+      - 3 題中階題目：只有乘除，除法以分數表示，除數為1位數或整十數，未知數為2位數
+      - 4 題高階題目：混合 4 種一步方程與目標代數式求值 (+, -, ×, ÷)
     */
     function generateUnit1Questions() {
       const usedKeys = new Set();
-      const easyPool = [];
-      const medPool = [];
-      const hardPool = [];
-
+      const questions = [];
       const vars = ['A', 'B', 'C', 'd', 'f', 'h', 'k', 'm', 'n', 'p', 'r', 't', 'x', 'y', 'M', 'R'];
 
       // 一位數 (2~9) 及整十數 (10, 20, ..., 90) 作為除法解的除數，方便心算
       const validDivisors = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90];
 
-      // 1 至 2 位數 (1~99) 作為未知數
-      const validVForDiv = [];
-      for (let v = 1; v <= 99; v++) validVForDiv.push(v);
+      // 2位數 (10~99) 作為乘除法未知數
+      const validVTwoDigits = [];
+      for (let v = 10; v <= 99; v++) validVTwoDigits.push(v);
 
-      // 生成加減法可用的未知數解 (1~99, 100~990尾數為0)
-      const validVValues = [];
-      for (let v = 1; v <= 99; v++) validVValues.push(v);
-      for (let v = 100; v <= 990; v += 10) validVValues.push(v);
+      // 加減法可用的未知數解 (10~99, 100~990尾數為0)
+      const validVAddSub = [...validVTwoDigits];
+      for (let v = 100; v <= 990; v += 10) validVAddSub.push(v);
 
-      // 1. 初階池 (只有加減，沒有減代數情況)
-      for (let v of vars) {
-        for (let val of validVValues) {
-          for (let a of [11, 14, 17, 20, 22, 25, 30, 39, 46, 53]) {
-            // 加法: v + a = b
-            let b = val + a;
-            easyPool.push({
-              level: 'easy',
-              key: `${v}+${a}=${b}`,
-              displayHtml: `${v} + ${a} = ${b}`,
-              displayText: `${v} + ${a} = ${b}`,
-              ans: val.toString(),
-              type: 'add1',
-              varName: v, a: a, b: b, val: val
+      const addSubConstants = [11, 14, 17, 20, 22, 25, 30, 39, 46, 53];
+
+      // 1. 生成 3 題初階題目 (只有加減)
+      let safety = 0;
+      while (questions.length < 3 && safety < 500) {
+        safety++;
+        const v = pickRandom(vars);
+        const val = pickRandom(validVAddSub);
+        const a = pickRandom(addSubConstants);
+        const type = pickRandom(['add1', 'add2', 'sub1', 'sub2']);
+
+        if (type === 'add1') {
+          const b = val + a;
+          const key = `${v}+${a}=${b}`;
+          if (!usedKeys.has(key)) {
+            usedKeys.add(key);
+            questions.push({
+              level: 'easy', key, displayHtml: `${v} + ${a} = ${b}`, displayText: `${v} + ${a} = ${b}`,
+              ans: val.toString(), type: 'add1', varName: v, a, b, val
             });
-
-            // 加法: a + v = b
-            easyPool.push({
-              level: 'easy',
-              key: `${a}+${v}=${b}`,
-              displayHtml: `${a} + ${v} = ${b}`,
-              displayText: `${a} + ${v} = ${b}`,
-              ans: val.toString(),
-              type: 'add2',
-              varName: v, a: a, b: b, val: val
+          }
+        } else if (type === 'add2') {
+          const b = val + a;
+          const key = `${a}+${v}=${b}`;
+          if (!usedKeys.has(key)) {
+            usedKeys.add(key);
+            questions.push({
+              level: 'easy', key, displayHtml: `${a} + ${v} = ${b}`, displayText: `${a} + ${v} = ${b}`,
+              ans: val.toString(), type: 'add2', varName: v, a, b, val
             });
+          }
+        } else if (type === 'sub1' && val > a) {
+          const subB = val - a;
+          const key = `${v}-${a}=${subB}`;
+          if (!usedKeys.has(key)) {
+            usedKeys.add(key);
+            questions.push({
+              level: 'easy', key, displayHtml: `${v} - ${a} = ${subB}`, displayText: `${v} - ${a} = ${subB}`,
+              ans: val.toString(), type: 'sub1', varName: v, a, b: subB, val
+            });
+          }
+        } else if (type === 'sub2' && val > a) {
+          const subB = val - a;
+          const key = `${subB}=${v}-${a}`;
+          if (!usedKeys.has(key)) {
+            usedKeys.add(key);
+            questions.push({
+              level: 'easy', key, displayHtml: `${subB} = ${v} - ${a}`, displayText: `${subB} = ${v} - ${a}`,
+              ans: val.toString(), type: 'sub2', varName: v, a, b: subB, val
+            });
+          }
+        }
+      }
 
-            // 減法: v - a = b (v 為被減數)
-            if (val > a) {
-              let subB = val - a;
-              easyPool.push({
-                level: 'easy',
-                key: `${v}-${a}=${subB}`,
-                displayHtml: `${v} - ${a} = ${subB}`,
-                displayText: `${v} - ${a} = ${subB}`,
-                ans: val.toString(),
-                type: 'sub1',
-                varName: v, a: a, b: subB, val: val
+      // 2. 生成 3 題中階題目 (只有乘除，除法以分數表示)
+      safety = 0;
+      while (questions.length < 6 && safety < 500) {
+        safety++;
+        const v = pickRandom(vars);
+        const type = pickRandom(['mult1', 'mult2', 'div1', 'div2']);
+        const a = pickRandom(validDivisors);
+
+        if (type === 'mult1' || type === 'mult2') {
+          const val = pickRandom(validVTwoDigits);
+          const prod = a * val;
+          if (prod <= 990) {
+            const key = type === 'mult1' ? `${a}${v}=${prod}` : `${prod}=${a}${v}`;
+            if (!usedKeys.has(key)) {
+              usedKeys.add(key);
+              questions.push({
+                level: 'medium', key, displayHtml: type === 'mult1' ? `${a}${v} = ${prod}` : `${prod} = ${a}${v}`,
+                displayText: key, ans: val.toString(), type, varName: v, a, b: prod, val
               });
-
-              easyPool.push({
-                level: 'easy',
-                key: `${subB}=${v}-${a}`,
-                displayHtml: `${subB} = ${v} - ${a}`,
-                displayText: `${subB} = ${v} - ${a}`,
-                ans: val.toString(),
-                type: 'sub2',
-                varName: v, a: a, b: subB, val: val
+            }
+          }
+        } else {
+          // 除法方程：從商與除數反推 2 位數未知數 val
+          const validQuots = [];
+          for (let q = 2; q <= 45; q++) {
+            if (a * q >= 10 && a * q <= 99) validQuots.push(q);
+          }
+          if (validQuots.length > 0) {
+            const divB = pickRandom(validQuots);
+            const val = a * divB;
+            const key = type === 'div1' ? `${v}/${a}=${divB}` : `${divB}=${v}/${a}`;
+            if (!usedKeys.has(key)) {
+              usedKeys.add(key);
+              const fracHtml = type === 'div1'
+                ? `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span> = ${divB}`
+                : `${divB} = <span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span>`;
+              const fracText = type === 'div1' ? `${v} / ${a} = ${divB}` : `${divB} = ${v} / ${a}`;
+              questions.push({
+                level: 'medium', key, displayHtml: fracHtml, displayText: fracText,
+                ans: val.toString(), type, varName: v, a, b: divB, val
               });
             }
           }
         }
       }
 
-      // 2. 中階池 (只有乘除，除法以分數表示，無除以代數)
-      for (let v of vars) {
-        for (let val of validVForDiv) {
-          for (let a of validDivisors) {
-            let prod = a * val;
-            if (prod <= 990) {
-              medPool.push({
-                level: 'medium',
-                key: `${a}${v}=${prod}`,
-                displayHtml: `${a}${v} = ${prod}`,
-                displayText: `${a}${v} = ${prod}`,
-                ans: val.toString(),
-                type: 'mult1',
-                varName: v, a: a, b: prod, val: val
-              });
+      // 3. 生成 4 題高階題目 (涵蓋 +、-、×、÷ 四種目標代數式)
+      const targetOps = shuffle(['mult', 'div', 'add', 'sub']);
+      const baseTypes = shuffle(['add1', 'sub1', 'mult1', 'div1']);
 
-              medPool.push({
-                level: 'medium',
-                key: `${prod}=${a}${v}`,
-                displayHtml: `${prod} = ${a}${v}`,
-                displayText: `${prod} = ${a}${v}`,
-                ans: val.toString(),
-                type: 'mult2',
-                varName: v, a: a, b: prod, val: val
-              });
+      for (let i = 0; i < 4; i++) {
+        const targetOp = targetOps[i];
+        const baseType = baseTypes[i];
+        let created = false;
+        let innerSafety = 0;
+
+        while (!created && innerSafety < 300) {
+          innerSafety++;
+          const v = pickRandom(vars);
+          let val, a, b, eqHtml, eqText;
+
+          if (baseType === 'add1') {
+            val = pickRandom(validVAddSub);
+            a = pickRandom([3, 4, 5, 6, 7, 8, 9, 12, 15, 18, 24]);
+            b = val + a;
+            eqHtml = `${v} + ${a} = ${b}`;
+            eqText = `${v} + ${a} = ${b}`;
+          } else if (baseType === 'sub1') {
+            val = pickRandom(validVAddSub);
+            a = pickRandom([3, 4, 5, 6, 7, 8, 9, 12, 15, 18, 25]);
+            if (val <= a) continue;
+            b = val - a;
+            eqHtml = `${v} - ${a} = ${b}`;
+            eqText = `${v} - ${a} = ${b}`;
+          } else if (baseType === 'mult1') {
+            a = pickRandom(validDivisors);
+            val = pickRandom(validVTwoDigits);
+            b = a * val;
+            if (b > 990) continue;
+            eqHtml = `${a}${v} = ${b}`;
+            eqText = `${a}${v} = ${b}`;
+          } else {
+            a = pickRandom(validDivisors);
+            const validQuots = [];
+            for (let q = 2; q <= 45; q++) {
+              if (a * q >= 10 && a * q <= 99) validQuots.push(q);
             }
-
-            if (val % a === 0) {
-              let divB = val / a;
-              let fracHtml = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span> = ${divB}`;
-              let fracText = `${v} / ${a} = ${divB}`;
-              medPool.push({
-                level: 'medium',
-                key: `${v}/${a}=${divB}`,
-                displayHtml: fracHtml,
-                displayText: fracText,
-                ans: val.toString(),
-                type: 'div1',
-                varName: v, a: a, b: divB, val: val
-              });
-
-              let fracHtml2 = `${divB} = <span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span>`;
-              let fracText2 = `${divB} = ${v} / ${a}`;
-              medPool.push({
-                level: 'medium',
-                key: `${divB}=${v}/${a}`,
-                displayHtml: fracHtml2,
-                displayText: fracText2,
-                ans: val.toString(),
-                type: 'div2',
-                varName: v, a: a, b: divB, val: val
-              });
-            }
+            if (validQuots.length === 0) continue;
+            b = pickRandom(validQuots);
+            val = a * b;
+            eqHtml = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span> = ${b}`;
+            eqText = `${v} / ${a} = ${b}`;
           }
-        }
-      }
 
-      // 3. 高階池 (混合4種一步方程，目標代數式混合不同數字與運算符號 +,-,×,÷)
-      const baseEqCandidates = [];
-      for (let v of vars) {
-        // 加法與減法基礎方程
-        for (let val of validVValues) {
-          for (let a of [3, 4, 5, 6, 7, 8, 9, 12, 15, 18, 24]) {
-            let b = val + a;
-            baseEqCandidates.push({ type: 'add1', v: v, val: val, a: a, b: b, eqHtml: `${v} + ${a} = ${b}`, eqText: `${v} + ${a} = ${b}` });
-          }
-          for (let a of [3, 4, 5, 6, 7, 8, 9, 12, 15, 18, 25, 34]) {
-            if (val > a) {
-              let b = val - a;
-              baseEqCandidates.push({ type: 'sub1', v: v, val: val, a: a, b: b, eqHtml: `${v} - ${a} = ${b}`, eqText: `${v} - ${a} = ${b}` });
-            }
-          }
-        }
-
-        // 乘法與除法基礎方程（除數嚴格為 1位數 或 整十數，未知數 val 1~99）
-        for (let val of validVForDiv) {
-          for (let a of validDivisors) {
-            let b = a * val;
-            if (b <= 990) {
-              baseEqCandidates.push({ type: 'mult1', v: v, val: val, a: a, b: b, eqHtml: `${a}${v} = ${b}`, eqText: `${a}${v} = ${b}` });
-            }
-            if (val % a === 0) {
-              let b = val / a;
-              let fracHtml = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span> = ${b}`;
-              baseEqCandidates.push({ type: 'div1', v: v, val: val, a: a, b: b, eqHtml: fracHtml, eqText: `${v} / ${a} = ${b}` });
-            }
-          }
-        }
-      }
-
-      // 組合目標代數式 (乘法, 除法分數, 加法, 減法)
-      const targetOps = ['mult', 'div', 'add', 'sub'];
-      for (let base of shuffle(baseEqCandidates)) {
-        let v = base.v;
-        let val = base.val;
-
-        for (let targetOp of targetOps) {
           if (targetOp === 'mult') {
-            for (let k of [2, 3, 4, 5, 6, 7, 8, 9, 10]) {
-              let ansVal = k * val;
-              if (ansVal <= 990) {
-                hardPool.push({
-                  level: 'hard',
-                  key: `hard_${base.type}_mult_${v}_${val}_${base.a}_k${k}`,
-                  type: base.type,
-                  varName: v, a: base.a, b: base.b, val: val,
-                  eqHtml: base.eqHtml,
-                  eqText: base.eqText,
-                  targetHtml: `${k}${v}`,
-                  targetText: `${k}${v}`,
+            const k = pickRandom([2, 3, 4, 5, 6, 7, 8, 9, 10]);
+            const ansVal = k * val;
+            if (ansVal <= 990) {
+              const key = `hard_${baseType}_mult_${v}_${val}_${a}_k${k}`;
+              if (!usedKeys.has(key)) {
+                usedKeys.add(key);
+                questions.push({
+                  level: 'hard', key, type: baseType, varName: v, a, b, val,
+                  eqHtml, eqText, targetHtml: `${k}${v}`, targetText: `${k}${v}`,
                   targetCalcText: `${k}${v} = ${k} × ${val} = ${ansVal}`,
                   ans: ansVal.toString()
                 });
+                created = true;
               }
             }
           } else if (targetOp === 'div') {
-            // 目標代數式除法：除數 k 亦需為 1 位數 (2~9) 或整十數 (10, 20...)
-            for (let k of validDivisors) {
-              if (val % k === 0 && k !== base.a) {
-                let ansVal = val / k;
-                let targetFrac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${k}</span></span>`;
-                let targetFracVal = `<span class="math-frac"><span class="numerator">${val}</span><span class="denominator">${k}</span></span>`;
-                hardPool.push({
-                  level: 'hard',
-                  key: `hard_${base.type}_div_${v}_${val}_${base.a}_k${k}`,
-                  type: base.type,
-                  varName: v, a: base.a, b: base.b, val: val,
-                  eqHtml: base.eqHtml,
-                  eqText: base.eqText,
-                  targetHtml: targetFrac,
-                  targetText: `${v} / ${k}`,
+            const k = pickRandom(validDivisors);
+            if (val % k === 0 && k !== a) {
+              const ansVal = val / k;
+              const key = `hard_${baseType}_div_${v}_${val}_${a}_k${k}`;
+              if (!usedKeys.has(key)) {
+                usedKeys.add(key);
+                const targetFrac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${k}</span></span>`;
+                const targetFracVal = `<span class="math-frac"><span class="numerator">${val}</span><span class="denominator">${k}</span></span>`;
+                questions.push({
+                  level: 'hard', key, type: baseType, varName: v, a, b, val,
+                  eqHtml, eqText, targetHtml: targetFrac, targetText: `${v} / ${k}`,
                   targetCalcText: `${targetFrac} = ${targetFracVal} = ${ansVal}`,
                   ans: ansVal.toString()
                 });
+                created = true;
               }
             }
           } else if (targetOp === 'add') {
-            for (let c of [2, 4, 5, 7, 9, 12, 15, 20]) {
-              if (c !== base.a) {
-                let ansVal = val + c;
-                hardPool.push({
-                  level: 'hard',
-                  key: `hard_${base.type}_add_${v}_${val}_${base.a}_c${c}`,
-                  type: base.type,
-                  varName: v, a: base.a, b: base.b, val: val,
-                  eqHtml: base.eqHtml,
-                  eqText: base.eqText,
-                  targetHtml: `${v} + ${c}`,
-                  targetText: `${v} + ${c}`,
+            const c = pickRandom([2, 4, 5, 7, 9, 12, 15, 20]);
+            if (c !== a) {
+              const ansVal = val + c;
+              const key = `hard_${baseType}_add_${v}_${val}_${a}_c${c}`;
+              if (!usedKeys.has(key)) {
+                usedKeys.add(key);
+                questions.push({
+                  level: 'hard', key, type: baseType, varName: v, a, b, val,
+                  eqHtml, eqText, targetHtml: `${v} + ${c}`, targetText: `${v} + ${c}`,
                   targetCalcText: `${v} + ${c} = ${val} + ${c} = ${ansVal}`,
                   ans: ansVal.toString()
                 });
+                created = true;
               }
             }
           } else if (targetOp === 'sub') {
-            for (let c of [2, 4, 5, 7, 9, 12, 15, 20]) {
-              if (val > c && c !== base.a) {
-                let ansVal = val - c;
-                hardPool.push({
-                  level: 'hard',
-                  key: `hard_${base.type}_sub_${v}_${val}_${base.a}_c${c}`,
-                  type: base.type,
-                  varName: v, a: base.a, b: base.b, val: val,
-                  eqHtml: base.eqHtml,
-                  eqText: base.eqText,
-                  targetHtml: `${v} - ${c}`,
-                  targetText: `${v} - ${c}`,
+            const c = pickRandom([2, 4, 5, 7, 9, 12, 15, 20]);
+            if (val > c && c !== a) {
+              const ansVal = val - c;
+              const key = `hard_${baseType}_sub_${v}_${val}_${a}_c${c}`;
+              if (!usedKeys.has(key)) {
+                usedKeys.add(key);
+                questions.push({
+                  level: 'hard', key, type: baseType, varName: v, a, b, val,
+                  eqHtml, eqText, targetHtml: `${v} - ${c}`, targetText: `${v} - ${c}`,
                   targetCalcText: `${v} - ${c} = ${val} - ${c} = ${ansVal}`,
                   ans: ansVal.toString()
                 });
+                created = true;
               }
             }
-          }
-        }
-        if (hardPool.length > 800) break;
-      }
-
-      // 抽取題目：3初階、3中階、4高階
-      const questions = [];
-
-      const shuffledEasy = shuffle(easyPool);
-      let easyCount = 0;
-      for (let item of shuffledEasy) {
-        if (!usedKeys.has(item.key) && isValidVariableValue(item.val)) {
-          usedKeys.add(item.key);
-          questions.push(item);
-          easyCount++;
-          if (easyCount === 3) break;
-        }
-      }
-
-      const shuffledMed = shuffle(medPool);
-      let medCount = 0;
-      for (let item of shuffledMed) {
-        if (!usedKeys.has(item.key) && isValidVariableValue(item.val)) {
-          usedKeys.add(item.key);
-          questions.push(item);
-          medCount++;
-          if (medCount === 3) break;
-        }
-      }
-
-      const shuffledHard = shuffle(hardPool);
-      let hardCount = 0;
-      const targetOpsUsed = new Set();
-      
-      // 優先抽選不同運算符號 (+,-,×,÷) 的高階題目，增加變化度
-      for (let item of shuffledHard) {
-        let opType = item.targetCalcText.includes('×') ? 'mult' :
-                     item.targetCalcText.includes('denominator') ? 'div' :
-                     item.targetCalcText.includes('+') ? 'add' : 'sub';
-        let key = item.key;
-        if (!usedKeys.has(key) && isValidVariableValue(item.val) && !targetOpsUsed.has(opType)) {
-          usedKeys.add(key);
-          targetOpsUsed.add(opType);
-          questions.push(item);
-          hardCount++;
-          if (hardCount === 4) break;
-        }
-      }
-
-      if (hardCount < 4) {
-        for (let item of shuffledHard) {
-          let key = item.key;
-          if (!usedKeys.has(key) && isValidVariableValue(item.val)) {
-            usedKeys.add(key);
-            questions.push(item);
-            hardCount++;
-            if (hardCount === 4) break;
           }
         }
       }
@@ -1181,344 +1112,241 @@
     }
 
     /*
-      單元二題目生成邏輯（兩步方程求解）：
+      單元二題目生成邏輯（兩步方程求解 - 直接構造法，瞬間完成）：
       每次產生 10 題，題目不可重覆，依難度由低至高排序：
       - 6 題初階題目：從 8 種運算組合中隨機選取 6 種題型
-      - 4 題中階題目：兩步方程求解後，計算目標代數式的值（類似單元一高階題型）
-      - 保證答案為正整數，適合小五學生心算
+      - 4 題中階題目：兩步方程求解後，計算目標代數式的值（涵蓋 +、-、×、÷）
     */
     function generateUnit2Questions() {
       const usedKeys = new Set();
       const vars = ['a', 'b', 'd', 'e', 'f', 'h', 'k', 'm', 'n', 'r', 't', 'x', 'y', 'B', 'R'];
-      const validDivisors = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+      const opKeys = ['mult_add', 'mult_sub', 'div_add', 'div_sub', 'add_mult', 'sub_mult', 'add_div', 'sub_div'];
 
-      // 8 種組合類別的題目池
-      const poolByOp = {
-        mult_add: [], // 先乘再加: ax + b = c, b + ax = c
-        mult_sub: [], // 先乘再減: ax - b = c
-        div_add: [],  // 先除再加: x/a + b = c, b + x/a = c
-        div_sub: [],  // 先除再減: x/a - b = c, c = x/a - b
-        add_mult: [], // 先加再乘: a(x + b) = c
-        sub_mult: [], // 先減再乘: a(x - b) = c
-        add_div: [],  // 先加再除: (x + b)/a = c
-        sub_div: []   // 先減再除: (x - b)/a = c
-      };
+      // 輔助函式：根據指定的兩步方程類型直接生成一道題目
+      function buildTwoStepBase(opType, levelTag) {
+        let safety = 0;
+        while (safety < 200) {
+          safety++;
+          const v = pickRandom(vars);
 
-      for (let v of vars) {
-        for (let val = 1; val <= 50; val++) {
-
-          // 1. 先乘再加 (ax + b = c 或 b + ax = c)
-          for (let a of [2, 3, 4, 5, 6, 7, 8, 9]) {
-            for (let b of [3, 5, 7, 10, 12, 15, 20, 24, 39, 85]) {
-              let c = a * val + b;
+          if (opType === 'mult_add') {
+            const val = Math.floor(Math.random() * 24) + 2; // 2~25
+            const a = pickRandom([2, 3, 4, 5, 6, 7, 8, 9]);
+            const b = pickRandom([3, 5, 7, 10, 12, 15, 20, 24, 39]);
+            const c = a * val + b;
+            if (c <= 150) {
+              const isLeft = Math.random() < 0.5;
+              const eqText = isLeft ? `${a}${v} + ${b} = ${c}` : `${b} + ${a}${v} = ${c}`;
+              return {
+                level: levelTag, baseKey: `u2_ma_${v}_${val}_${a}_${b}_${isLeft}`,
+                displayHtml: eqText, displayText: eqText, ans: val.toString(),
+                type: 'mult_add', varName: v, a, b, c, val, isLeft
+              };
+            }
+          } else if (opType === 'mult_sub') {
+            const val = Math.floor(Math.random() * 24) + 2;
+            const a = pickRandom([2, 3, 4, 5, 6, 7, 8, 9]);
+            const b = pickRandom([3, 5, 10, 12, 15, 17, 20]);
+            const c = a * val - b;
+            if (c > 0 && c <= 150) {
+              const eqText = `${a}${v} - ${b} = ${c}`;
+              return {
+                level: levelTag, baseKey: `u2_ms_${v}_${val}_${a}_${b}`,
+                displayHtml: eqText, displayText: eqText, ans: val.toString(),
+                type: 'mult_sub', varName: v, a, b, c, val
+              };
+            }
+          } else if (opType === 'div_add') {
+            const a = pickRandom([2, 3, 4, 5, 6, 7, 8, 9, 10]);
+            const divVal = Math.floor(Math.random() * 14) + 2; // 2~15
+            const val = a * divVal;
+            if (val <= 99) {
+              const b = pickRandom([5, 10, 15, 20, 47, 85]);
+              const c = divVal + b;
               if (c <= 150) {
-                let isLeft = Math.random() < 0.5;
-                let displayHtml = isLeft
-                  ? `${a}${v} + ${b} = ${c}`
-                  : `${b} + ${a}${v} = ${c}`;
-                let displayText = isLeft
-                  ? `${a}${v} + ${b} = ${c}`
-                  : `${b} + ${a}${v} = ${c}`;
-
-                poolByOp.mult_add.push({
-                  level: 'easy',
-                  key: `u2_ma_${v}_${val}_${a}_${b}_${isLeft}`,
-                  displayHtml: displayHtml,
-                  displayText: displayText,
-                  ans: val.toString(),
-                  type: 'mult_add',
-                  varName: v, a: a, b: b, c: c, val: val, isLeft: isLeft
-                });
+                const isLeft = Math.random() < 0.5;
+                const frac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span>`;
+                const displayHtml = isLeft ? `${frac} + ${b} = ${c}` : `${b} + ${frac} = ${c}`;
+                const displayText = isLeft ? `${v}/${a} + ${b} = ${c}` : `${b} + ${v}/${a} = ${c}`;
+                return {
+                  level: levelTag, baseKey: `u2_da_${v}_${val}_${a}_${b}_${isLeft}`,
+                  displayHtml, displayText, ans: val.toString(),
+                  type: 'div_add', varName: v, a, b, c, val, isLeft
+                };
               }
             }
-          }
-
-          // 2. 先乘再減 (ax - b = c)
-          for (let a of [2, 3, 4, 5, 6, 7, 8, 9]) {
-            for (let b of [3, 5, 10, 12, 15, 17, 20]) {
-              let c = a * val - b;
-              if (c > 0 && c <= 150) {
-                poolByOp.mult_sub.push({
-                  level: 'easy',
-                  key: `u2_ms_${v}_${val}_${a}_${b}`,
-                  displayHtml: `${a}${v} - ${b} = ${c}`,
-                  displayText: `${a}${v} - ${b} = ${c}`,
-                  ans: val.toString(),
-                  type: 'mult_sub',
-                  varName: v, a: a, b: b, c: c, val: val
-                });
-              }
+          } else if (opType === 'div_sub') {
+            const a = pickRandom([2, 3, 4, 5, 6, 7, 8, 9, 10]);
+            const b = pickRandom([4, 8, 10, 15, 17, 20]);
+            const c = Math.floor(Math.random() * 20) + 2;
+            const divVal = c + b;
+            const val = a * divVal;
+            if (val <= 99) {
+              const isRev = Math.random() < 0.5;
+              const frac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span>`;
+              const displayHtml = isRev ? `${c} = ${frac} - ${b}` : `${frac} - ${b} = ${c}`;
+              const displayText = isRev ? `${c} = ${v}/${a} - ${b}` : `${v}/${a} - ${b} = ${c}`;
+              return {
+                level: levelTag, baseKey: `u2_ds_${v}_${val}_${a}_${b}_${isRev}`,
+                displayHtml, displayText, ans: val.toString(),
+                type: 'div_sub', varName: v, a, b, c, val, isRev
+              };
             }
-          }
-
-          // 3. 先除再加 (x/a + b = c 或 b + x/a = c)
-          for (let a of validDivisors) {
-            for (let b of [5, 10, 15, 20, 47, 85]) {
-              if (val % a === 0) {
-                let divVal = val / a;
-                let c = divVal + b;
-                if (c <= 150) {
-                  let isLeft = Math.random() < 0.5;
-                  let frac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span>`;
-                  let displayHtml = isLeft ? `${frac} + ${b} = ${c}` : `${b} + ${frac} = ${c}`;
-                  let displayText = isLeft ? `${v}/${a} + ${b} = ${c}` : `${b} + ${v}/${a} = ${c}`;
-
-                  poolByOp.div_add.push({
-                    level: 'easy',
-                    key: `u2_da_${v}_${val}_${a}_${b}_${isLeft}`,
-                    displayHtml: displayHtml,
-                    displayText: displayText,
-                    ans: val.toString(),
-                    type: 'div_add',
-                    varName: v, a: a, b: b, c: c, val: val, isLeft: isLeft
-                  });
-                }
-              }
+          } else if (opType === 'add_mult') {
+            const a = pickRandom([2, 3, 4, 5, 6]);
+            const b = pickRandom([2, 3, 4, 5, 6, 8, 10]);
+            const val = Math.floor(Math.random() * 18) + 2;
+            const c = a * (val + b);
+            if (c <= 120) {
+              const eqText = `${a}(${v} + ${b}) = ${c}`;
+              return {
+                level: levelTag, baseKey: `u2_am_${v}_${val}_${a}_${b}`,
+                displayHtml: eqText, displayText: eqText, ans: val.toString(),
+                type: 'add_mult', varName: v, a, b, c, val
+              };
             }
-          }
-
-          // 4. 先除再減 (x/a - b = c 或 c = x/a - b)
-          for (let a of validDivisors) {
-            for (let b of [4, 8, 10, 15, 17, 20]) {
-              if (val % a === 0) {
-                let divVal = val / a;
-                if (divVal > b) {
-                  let c = divVal - b;
-                  let isRev = Math.random() < 0.5;
-                  let frac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${a}</span></span>`;
-                  let displayHtml = isRev ? `${c} = ${frac} - ${b}` : `${frac} - ${b} = ${c}`;
-                  let displayText = isRev ? `${c} = ${v}/${a} - ${b}` : `${v}/${a} - ${b} = ${c}`;
-
-                  poolByOp.div_sub.push({
-                    level: 'easy',
-                    key: `u2_ds_${v}_${val}_${a}_${b}_${isRev}`,
-                    displayHtml: displayHtml,
-                    displayText: displayText,
-                    ans: val.toString(),
-                    type: 'div_sub',
-                    varName: v, a: a, b: b, c: c, val: val, isRev: isRev
-                  });
-                }
-              }
+          } else if (opType === 'sub_mult') {
+            const a = pickRandom([2, 3, 4, 5, 6]);
+            const b = pickRandom([2, 3, 4, 5, 6, 8]);
+            const diff = Math.floor(Math.random() * 14) + 2;
+            const val = diff + b;
+            const c = a * diff;
+            if (c <= 120) {
+              const eqText = `${a}(${v} - ${b}) = ${c}`;
+              return {
+                level: levelTag, baseKey: `u2_sm_${v}_${val}_${a}_${b}`,
+                displayHtml: eqText, displayText: eqText, ans: val.toString(),
+                type: 'sub_mult', varName: v, a, b, c, val
+              };
             }
-          }
-
-          // 5. 先加再乘: a(x + b) = c
-          for (let a of [2, 3, 4, 5, 6]) {
-            for (let b of [2, 3, 4, 5, 6, 8, 10]) {
-              let c = a * (val + b);
-              if (c <= 120) {
-                poolByOp.add_mult.push({
-                  level: 'easy',
-                  key: `u2_am_${v}_${val}_${a}_${b}`,
-                  displayHtml: `${a}(${v} + ${b}) = ${c}`,
-                  displayText: `${a}(${v} + ${b}) = ${c}`,
-                  ans: val.toString(),
-                  type: 'add_mult',
-                  varName: v, a: a, b: b, c: c, val: val
-                });
-              }
+          } else if (opType === 'add_div') {
+            const a = pickRandom([2, 3, 4, 5, 6]);
+            const b = pickRandom([2, 4, 6, 8, 10]);
+            const c = pickRandom([3, 4, 5, 6, 7, 8]);
+            if (c * a > b) {
+              const val = c * a - b;
+              const frac = `<span class="math-frac"><span class="numerator">${v} + ${b}</span><span class="denominator">${a}</span></span> = ${c}`;
+              return {
+                level: levelTag, baseKey: `u2_ad_${v}_${val}_${a}_${b}_${c}`,
+                displayHtml: frac, displayText: `(${v} + ${b})/${a} = ${c}`, ans: val.toString(),
+                type: 'add_div', varName: v, a, b, c, val
+              };
             }
-          }
-
-          // 6. 先減再乘: a(x - b) = c
-          for (let a of [2, 3, 4, 5, 6]) {
-            for (let b of [2, 3, 4, 5, 6, 8]) {
-              if (val > b) {
-                let c = a * (val - b);
-                if (c <= 120) {
-                  poolByOp.sub_mult.push({
-                    level: 'easy',
-                    key: `u2_sm_${v}_${val}_${a}_${b}`,
-                    displayHtml: `${a}(${v} - ${b}) = ${c}`,
-                    displayText: `${a}(${v} - ${b}) = ${c}`,
-                    ans: val.toString(),
-                    type: 'sub_mult',
-                    varName: v, a: a, b: b, c: c, val: val
-                  });
-                }
-              }
-            }
-          }
-
-          // 7. 先加再除: (x + b)/a = c
-          for (let a of [2, 3, 4, 5, 6]) {
-            for (let b of [2, 4, 6, 8, 10]) {
-              for (let c of [3, 4, 5, 6, 7, 8]) {
-                if (c * a > b) {
-                  let vVal = c * a - b;
-                  let frac = `<span class="math-frac"><span class="numerator">${v} + ${b}</span><span class="denominator">${a}</span></span> = ${c}`;
-                  poolByOp.add_div.push({
-                    level: 'easy',
-                    key: `u2_ad_${v}_${vVal}_${a}_${b}_${c}`,
-                    displayHtml: frac,
-                    displayText: `(${v} + ${b})/${a} = ${c}`,
-                    ans: vVal.toString(),
-                    type: 'add_div',
-                    varName: v, a: a, b: b, c: c, val: vVal
-                  });
-                }
-              }
-            }
-          }
-
-          // 8. 先減再除: (x - b)/a = c (參考 image_4a3561 形式之基礎方程)
-          for (let a of [2, 3, 4, 5, 6]) {
-            for (let b of [2, 4, 6, 8, 10]) {
-              for (let c of [3, 4, 5, 6, 7, 8]) {
-                let vVal = c * a + b;
-                if (vVal <= 99) {
-                  let frac = `<span class="math-frac"><span class="numerator">${v} - ${b}</span><span class="denominator">${a}</span></span> = ${c}`;
-                  poolByOp.sub_div.push({
-                    level: 'easy',
-                    key: `u2_sd_${v}_${vVal}_${a}_${b}_${c}`,
-                    displayHtml: frac,
-                    displayText: `(${v} - ${b})/${a} = ${c}`,
-                    ans: vVal.toString(),
-                    type: 'sub_div',
-                    varName: v, a: a, b: b, c: c, val: vVal
-                  });
-                }
-              }
+          } else if (opType === 'sub_div') {
+            const a = pickRandom([2, 3, 4, 5, 6]);
+            const b = pickRandom([2, 4, 6, 8, 10]);
+            const c = pickRandom([3, 4, 5, 6, 7, 8]);
+            const val = c * a + b;
+            if (val <= 99) {
+              const frac = `<span class="math-frac"><span class="numerator">${v} - ${b}</span><span class="denominator">${a}</span></span> = ${c}`;
+              return {
+                level: levelTag, baseKey: `u2_sd_${v}_${val}_${a}_${b}_${c}`,
+                displayHtml: frac, displayText: `(${v} - ${b})/${a} = ${c}`, ans: val.toString(),
+                type: 'sub_div', varName: v, a, b, c, val
+              };
             }
           }
         }
+        return null;
       }
 
       const questions = [];
-      const opKeys = ['mult_add', 'mult_sub', 'div_add', 'div_sub', 'add_mult', 'sub_mult', 'add_div', 'sub_div'];
 
-      // 1. 生成 6 題初階題目：從 8 種運算類型中隨機挑選 6 種 (每種 1 題)
-      let easyCount = 0;
-      for (let op of shuffle(opKeys)) {
-        const pool = shuffle(poolByOp[op]);
-        for (let item of pool) {
-          if (!usedKeys.has(item.key) && isValidVariableValue(item.val)) {
-            usedKeys.add(item.key);
-            questions.push(item);
-            easyCount++;
-            break;
-          }
+      // 1. 生成 6 題初階題目：從 8 種運算類型中隨機挑選 6 種
+      const selectedEasyOps = shuffle(opKeys).slice(0, 6);
+      for (let op of selectedEasyOps) {
+        let q = buildTwoStepBase(op, 'easy');
+        if (q && !usedKeys.has(q.baseKey)) {
+          q.key = q.baseKey;
+          usedKeys.add(q.key);
+          questions.push(q);
         }
-        if (easyCount === 6) break;
       }
 
-      // 2. 生成 4 題中階題目：兩步方程求解後計算目標代數式的值 (對應 image_4a3561)
-      const mediumPool = [];
-      const allEasyCandidates = [];
-      for (let op of opKeys) {
-        allEasyCandidates.push(...poolByOp[op]);
-      }
+      // 2. 生成 4 題中階題目：涵蓋乘、加、減、除四種目標代數式求值
+      const targetTypes = shuffle(['mult', 'add', 'sub', 'div']);
+      const medBaseOps = shuffle(opKeys).slice(0, 4);
 
-      for (let base of shuffle(allEasyCandidates)) {
-        let v = base.varName;
-        let val = base.val;
+      for (let i = 0; i < 4; i++) {
+        const tType = targetTypes[i];
+        const opType = medBaseOps[i];
+        let created = false;
+        let safety = 0;
 
-        // 生成目標代數式 (乘法 3m, 加法 m+10, 減法 m-5, 除法 m/2)
-        const targetTypes = ['mult', 'add', 'sub', 'div'];
-        for (let tType of targetTypes) {
+        while (!created && safety < 200) {
+          safety++;
+          const base = buildTwoStepBase(opType, 'medium');
+          if (!base) continue;
+
+          const v = base.varName;
+          const val = base.val;
+
           if (tType === 'mult') {
-            for (let k of [2, 3, 4, 5, 6]) {
-              let ansVal = k * val;
-              if (ansVal <= 250) {
-                mediumPool.push({
-                  level: 'medium',
-                  key: `u2_med_mult_${base.key}_k${k}`,
-                  type: base.type,
-                  varName: v, a: base.a, b: base.b, c: base.c, val: val,
-                  eqHtml: base.displayHtml,
-                  eqText: base.displayText,
-                  targetHtml: `${k}${v}`,
-                  targetText: `${k}${v}`,
-                  targetCalcText: `${k}${v} = ${k} × ${val} = ${ansVal}`,
-                  ans: ansVal.toString()
-                });
-              }
+            const k = pickRandom([2, 3, 4, 5, 6]);
+            const ansVal = k * val;
+            const key = `u2_med_mult_${base.baseKey}_k${k}`;
+            if (ansVal <= 250 && !usedKeys.has(key)) {
+              usedKeys.add(key);
+              questions.push({
+                level: 'medium', key, type: base.type,
+                varName: v, a: base.a, b: base.b, c: base.c, val,
+                eqHtml: base.displayHtml, eqText: base.displayText,
+                targetHtml: `${k}${v}`, targetText: `${k}${v}`,
+                targetCalcText: `${k}${v} = ${k} × ${val} = ${ansVal}`,
+                ans: ansVal.toString()
+              });
+              created = true;
             }
           } else if (tType === 'add') {
-            for (let cVal of [3, 5, 8, 10, 12, 15]) {
-              let ansVal = val + cVal;
-              mediumPool.push({
-                level: 'medium',
-                key: `u2_med_add_${base.key}_c${cVal}`,
-                type: base.type,
-                varName: v, a: base.a, b: base.b, c: base.c, val: val,
-                eqHtml: base.displayHtml,
-                eqText: base.displayText,
-                targetHtml: `${v} + ${cVal}`,
-                targetText: `${v} + ${cVal}`,
+            const cVal = pickRandom([3, 5, 8, 10, 12, 15]);
+            const ansVal = val + cVal;
+            const key = `u2_med_add_${base.baseKey}_c${cVal}`;
+            if (!usedKeys.has(key)) {
+              usedKeys.add(key);
+              questions.push({
+                level: 'medium', key, type: base.type,
+                varName: v, a: base.a, b: base.b, c: base.c, val,
+                eqHtml: base.displayHtml, eqText: base.displayText,
+                targetHtml: `${v} + ${cVal}`, targetText: `${v} + ${cVal}`,
                 targetCalcText: `${v} + ${cVal} = ${val} + ${cVal} = ${ansVal}`,
                 ans: ansVal.toString()
               });
+              created = true;
             }
           } else if (tType === 'sub') {
-            for (let cVal of [2, 4, 5, 8, 10]) {
-              if (val > cVal) {
-                let ansVal = val - cVal;
-                mediumPool.push({
-                  level: 'medium',
-                  key: `u2_med_sub_${base.key}_c${cVal}`,
-                  type: base.type,
-                  varName: v, a: base.a, b: base.b, c: base.c, val: val,
-                  eqHtml: base.displayHtml,
-                  eqText: base.displayText,
-                  targetHtml: `${v} - ${cVal}`,
-                  targetText: `${v} - ${cVal}`,
-                  targetCalcText: `${v} - ${cVal} = ${val} - ${cVal} = ${ansVal}`,
-                  ans: ansVal.toString()
-                });
-              }
+            const cVal = pickRandom([2, 4, 5, 8, 10]);
+            const key = `u2_med_sub_${base.baseKey}_c${cVal}`;
+            if (val > cVal && !usedKeys.has(key)) {
+              usedKeys.add(key);
+              const ansVal = val - cVal;
+              questions.push({
+                level: 'medium', key, type: base.type,
+                varName: v, a: base.a, b: base.b, c: base.c, val,
+                eqHtml: base.displayHtml, eqText: base.displayText,
+                targetHtml: `${v} - ${cVal}`, targetText: `${v} - ${cVal}`,
+                targetCalcText: `${v} - ${cVal} = ${val} - ${cVal} = ${ansVal}`,
+                ans: ansVal.toString()
+              });
+              created = true;
             }
           } else if (tType === 'div') {
-            for (let k of [2, 3, 4, 5]) {
-              if (val % k === 0) {
-                let ansVal = val / k;
-                let targetFrac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${k}</span></span>`;
-                let targetFracVal = `<span class="math-frac"><span class="numerator">${val}</span><span class="denominator">${k}</span></span>`;
-                mediumPool.push({
-                  level: 'medium',
-                  key: `u2_med_div_${base.key}_k${k}`,
-                  type: base.type,
-                  varName: v, a: base.a, b: base.b, c: base.c, val: val,
-                  eqHtml: base.displayHtml,
-                  eqText: base.displayText,
-                  targetHtml: targetFrac,
-                  targetText: `${v}/${k}`,
-                  targetCalcText: `${targetFrac} = ${targetFracVal} = ${ansVal}`,
-                  ans: ansVal.toString()
-                });
-              }
+            const k = pickRandom([2, 3, 4, 5]);
+            const key = `u2_med_div_${base.baseKey}_k${k}`;
+            if (val % k === 0 && !usedKeys.has(key)) {
+              usedKeys.add(key);
+              const ansVal = val / k;
+              const targetFrac = `<span class="math-frac"><span class="numerator">${v}</span><span class="denominator">${k}</span></span>`;
+              const targetFracVal = `<span class="math-frac"><span class="numerator">${val}</span><span class="denominator">${k}</span></span>`;
+              questions.push({
+                level: 'medium', key, type: base.type,
+                varName: v, a: base.a, b: base.b, c: base.c, val,
+                eqHtml: base.displayHtml, eqText: base.displayText,
+                targetHtml: targetFrac, targetText: `${v}/${k}`,
+                targetCalcText: `${targetFrac} = ${targetFracVal} = ${ansVal}`,
+                ans: ansVal.toString()
+              });
+              created = true;
             }
-          }
-        }
-        if (mediumPool.length > 300) break;
-      }
-
-      let medCount = 0;
-      const targetTypesUsed = new Set();
-      const shuffledMed = shuffle(mediumPool);
-
-      // 優先抽取涵蓋不同目標運算 (+, -, ×, ÷) 的中階題，確保豐富度
-      for (let item of shuffledMed) {
-        let opType = item.targetCalcText.includes('×') ? 'mult' :
-                     item.targetCalcText.includes('denominator') ? 'div' :
-                     item.targetCalcText.includes('+') ? 'add' : 'sub';
-        if (!usedKeys.has(item.key) && isValidVariableValue(item.val) && !targetTypesUsed.has(opType)) {
-          usedKeys.add(item.key);
-          targetTypesUsed.add(opType);
-          questions.push(item);
-          medCount++;
-          if (medCount === 4) break;
-        }
-      }
-
-      if (medCount < 4) {
-        for (let item of shuffledMed) {
-          if (!usedKeys.has(item.key) && isValidVariableValue(item.val)) {
-            usedKeys.add(item.key);
-            questions.push(item);
-            medCount++;
-            if (medCount === 4) break;
           }
         }
       }
@@ -1966,7 +1794,7 @@
       } else {
         correctItems.forEach(item => {
           const qText = t.questionLabel.replace('{n}', item.qIndex);
-          const pTxt = item.questionObj.level === 'hard'
+          const pTxt = item.questionObj.eqText
             ? `${item.questionObj.eqText} ➔ ${item.questionObj.targetText}`
             : item.questionObj.displayText;
           const itemDiv = document.createElement('div');
@@ -1988,7 +1816,7 @@
       } else {
         wrongItems.forEach(item => {
           const qText = t.questionLabel.replace('{n}', item.qIndex);
-          const pTxt = item.questionObj.level === 'hard'
+          const pTxt = item.questionObj.eqText
             ? `${item.questionObj.eqText} ➔ ${item.questionObj.targetText}`
             : item.questionObj.displayText;
           const userAnsDisplay = item.userFirstWrong !== null ? item.userFirstWrong : '-';
@@ -2017,7 +1845,7 @@
         link.href = canvas.toDataURL('image/png');
         link.click();
       }).catch(err => {
-        alert("下載失敗，請稍後再試：" + err);
+        openModal('提示', '下載失敗，請稍後再試：' + err, '關閉', '確定', closeModal);
       });
     }
 
